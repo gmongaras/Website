@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #000000;
+  --accent: #3B0066;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: white;
+}
+
+/* Fancy gradient accents using the purple hue */
+.accent-gradient {
+  background: radial-gradient(1200px 800px at 80% -10%, rgba(59,0,102,0.35), transparent 60%),
+              radial-gradient(800px 600px at -10% 110%, rgba(59,0,102,0.25), transparent 60%);
+}
+
+.card {
+  @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-glow hover:bg-white/10 transition;
+}
+
+.chip {
+  @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm;
+}
+
+.btn {
+  @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 border border-white/15 bg-white/5 hover:bg-white/10 transition;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(59,0,102,0.8), rgba(59,0,102,0.4));
+  @apply border-0 hover:opacity-90;
+}
+
+.section {
+  @apply max-w-6xl mx-auto px-6 sm:px-8 lg:px-10;
+}
+
+.link {
+  @apply inline-flex items-center gap-1 hover:underline decoration-accent/60 underline-offset-4;
+}
