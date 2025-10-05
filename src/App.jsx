@@ -1,6 +1,59 @@
-import { useMemo } from "react"
+import { useMemo, useState, useEffect, useRef } from "react"
 import { Github, Linkedin, Mail, Youtube, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu } from "lucide-react"
 import { profile, education, skills, experience, projects, publications, activitiesAwards } from "./data"
+import GraphBackground from "./GraphBackground"
+
+const TypingAnimation = () => {
+  const texts = ["Gabriel Mongaras", "a developer", "a researcher", "a problem solver", "an innovator"]
+  const [currentTextIndex, setCurrentTextIndex] = useState(0)
+  const [currentText, setCurrentText] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showCursor, setShowCursor] = useState(true)
+
+  useEffect(() => {
+    const fullText = texts[currentTextIndex]
+    const timeout = setTimeout(() => {
+      if (!isDeleting) {
+        if (currentText.length < fullText.length) {
+          setCurrentText(fullText.slice(0, currentText.length + 1))
+        } else {
+          // Finished typing, wait then start deleting
+          setTimeout(() => setIsDeleting(true), 2000)
+        }
+      } else {
+        if (currentText.length > 0) {
+          setCurrentText(currentText.slice(0, -1))
+        } else {
+          // Finished deleting, move to next text
+          setIsDeleting(false)
+          setCurrentTextIndex((prev) => (prev + 1) % texts.length)
+        }
+      }
+    }, isDeleting ? 50 : 100)
+
+    return () => clearTimeout(timeout)
+  }, [currentText, currentTextIndex, isDeleting, texts])
+
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev)
+    }, 500)
+    return () => clearInterval(cursorInterval)
+  }, [])
+
+  return (
+    <div className="text-3xl sm:text-5xl font-bold tracking-tight">
+      <span className="text-white">Hello there. I am...</span>
+      <br />
+      <span style={{ color: 'var(--accent)' }}>
+        {currentText}
+        <span className={`inline-block w-0.5 h-8 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`} 
+              style={{ backgroundColor: 'var(--accent)' }}>
+        </span>
+      </span>
+    </div>
+  )
+}
 
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
   <div className="flex items-end justify-between mb-6">
@@ -55,15 +108,16 @@ const Header = () => {
 }
 
 const Hero = () => {
+  const heroRef = useRef(null)
+  
   return (
-    <div className="accent-gradient border-b border-white/10">
-      <div className="section py-16 sm:py-24">
+    <div ref={heroRef} className="accent-gradient border-b border-white/10 relative overflow-hidden">
+      <GraphBackground containerRef={heroRef} />
+      <div className="section py-16 sm:py-24 relative z-10">
         <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-2">
             <p className="text-sm text-white/60 mb-3">{profile.location}</p>
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight">
-              {profile.name}
-            </h1>
+            <TypingAnimation />
             <p className="mt-3 text-lg sm:text-xl text-white/80">{profile.tagline}</p>
             <p className="mt-4 max-w-2xl text-white/70">{profile.summary}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -109,7 +163,7 @@ const Experience = () => (
         <Card key={idx}>
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="font-semibold">{job.title} — <span className="text-accent">{job.company}</span></h3>
+              <h3 className="font-semibold">{job.title} — <span style={{ color: 'var(--accent)' }}>{job.company}</span></h3>
               <p className="text-sm text-white/60">{job.location} • {job.date}</p>
             </div>
           </div>
@@ -191,15 +245,15 @@ const Skills = () => {
       <div className="card p-0">
         <div className="grid md:grid-cols-3">
           <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
-            <h4 className="font-semibold mb-3 text-accent">Coding</h4>
+            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Coding</h4>
             <div className="flex flex-wrap gap-2">{skills.coding.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
           </div>
           <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
-            <h4 className="font-semibold mb-3 text-accent">AI / ML</h4>
+            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>AI / ML</h4>
             <div className="flex flex-wrap gap-2">{skills.ai.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
           </div>
           <div className="p-5">
-            <h4 className="font-semibold mb-3 text-accent">Other</h4>
+            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Other</h4>
             <div className="flex flex-wrap gap-2">{skills.other.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
           </div>
         </div>
