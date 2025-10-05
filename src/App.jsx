@@ -79,13 +79,26 @@ const LinkIcon = ({ href, label }) => (
 )
 
 const Header = () => {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 0)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
-    <header className="border-b border-white/10 sticky top-0 z-40 bg-black/70 backdrop-blur">
+    // <header className="border-b border-white/10 sticky top-0 z-40 bg-black/70 backdrop-blur relative"></header>
+    <header className="sticky top-0 z-40 bg-black/70 backdrop-blur relative">
       <div className="section py-4 flex items-center justify-between">
-        <a href="#" className="font-semibold tracking-wide hover:opacity-90">
-          <span className="text-white/70">gm</span>
-          <span className="ml-1 px-2 py-1 rounded-md bg-accent/40 border border-accent/50">AI</span>
+        <a href="/" className="flex items-center gap-2 tracking-wide hover:opacity-90">
+          <img src="/canvas.png" alt="Canvas" className="h-10 w-10 sm:h-16 sm:w-16 rounded-md object-cover shadow-sm" />
+          {/* <span className="text-white/70">gm</span>
+          <span className="ml-1 px-2 py-1 rounded-md bg-accent/40 border border-accent/50">AI</span> */}
         </a>
+        {/* <a href="#" className="font-semibold tracking-wide hover:opacity-90">
+        </a> */}
         <nav className="hidden sm:flex items-center gap-6 text-sm">
           <a className="hover:text-accent" href="#experience">Experience</a>
           <a className="hover:text-accent" href="#projects">Projects</a>
@@ -103,6 +116,15 @@ const Header = () => {
           </a>
         </div>
       </div>
+      <div
+        className="pointer-events-none absolute left-0 right-0 -bottom-4 h-8 transition-opacity duration-300"
+        style={{
+          opacity: scrolled ? 1 : 0,
+          // background: 'linear-gradient(to bottom, rgba(139, 92, 246, 0.6), rgba(139, 92, 246, 0))',
+          background: 'var(--gradient-header-fade)',
+          filter: 'blur(12px)'
+        }}
+      />
     </header>
   )
 }

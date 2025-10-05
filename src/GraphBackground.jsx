@@ -94,6 +94,9 @@ const GraphBackground = ({ containerRef }) => {
     ctx.clearRect(0, 0, width, height)
 
     const nodes = nodesRef.current
+    // Read accent rgb from CSS variables for consistent theming
+    const computedStyles = getComputedStyle(document.documentElement)
+    const accentRgb = computedStyles.getPropertyValue('--accent-rgb').trim() || '106, 27, 154'
     const mouse = mouseRef.current
 
     // Update and draw nodes
@@ -155,13 +158,13 @@ const GraphBackground = ({ containerRef }) => {
       )
       
       if (hoveredNodeRef.current === node) {
-        gradient.addColorStop(0, 'rgba(106, 27, 154, 0.9)')
-        gradient.addColorStop(0.5, 'rgba(106, 27, 154, 0.6)')
-        gradient.addColorStop(1, 'rgba(106, 27, 154, 0.1)')
+        gradient.addColorStop(0, `rgba(${accentRgb}, 0.9)`)
+        gradient.addColorStop(0.5, `rgba(${accentRgb}, 0.6)`)
+        gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`)
       } else {
-        gradient.addColorStop(0, 'rgba(106, 27, 154, 0.7)')
-        gradient.addColorStop(0.5, 'rgba(106, 27, 154, 0.4)')
-        gradient.addColorStop(1, 'rgba(106, 27, 154, 0.1)')
+        gradient.addColorStop(0, `rgba(${accentRgb}, 0.7)`)
+        gradient.addColorStop(0.5, `rgba(${accentRgb}, 0.4)`)
+        gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`)
       }
 
       ctx.fillStyle = gradient
@@ -179,7 +182,7 @@ const GraphBackground = ({ containerRef }) => {
         
         if (distance < 80) {
           const opacity = Math.max(0, 1 - distance / 80) * 0.4
-          ctx.strokeStyle = `rgba(106, 27, 154, ${opacity})`
+          ctx.strokeStyle = `rgba(${accentRgb}, ${opacity})`
           ctx.lineWidth = 0.8
           ctx.beginPath()
           ctx.moveTo(node.x, node.y)

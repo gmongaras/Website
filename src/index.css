@@ -7,6 +7,11 @@
   /* --accent: #3B0066; */
   --accent: #6A1B9A;
   --accent-rgb: 106, 27, 154;
+  /* Gradient variables */
+  --gradient-accent-bg: radial-gradient(1200px 800px at 80% -10%, rgba(var(--accent-rgb),0.35), transparent 60%),
+                        radial-gradient(800px 600px at -10% 110%, rgba(var(--accent-rgb),0.25), transparent 60%);
+  --gradient-button: linear-gradient(135deg, rgba(var(--accent-rgb), 0.8), rgba(var(--accent-rgb), 0.4));
+  --gradient-header-fade: linear-gradient(to bottom, rgba(var(--accent-rgb), 0.7), rgba(var(--accent-rgb), 0));
 }
 
 html, body, #root {
@@ -17,8 +22,7 @@ html, body, #root {
 
 /* Fancy gradient accents using the purple hue */
 .accent-gradient {
-  background: radial-gradient(1200px 800px at 80% -10%, rgba(var(--accent-rgb),0.35), transparent 60%),
-              radial-gradient(800px 600px at -10% 110%, rgba(var(--accent-rgb),0.25), transparent 60%);
+  background: var(--gradient-accent-bg);
 }
 
 .card {
@@ -34,7 +38,7 @@ html, body, #root {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.8), rgba(var(--accent-rgb), 0.4));
+  background: var(--gradient-button);
   @apply border-0 hover:opacity-90;
 }
 
