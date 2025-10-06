@@ -162,8 +162,8 @@ const Header = () => {
         {/* Brand */}
         <a href="/" className="flex items-center gap-2 tracking-wide hover:opacity-90">
           <img
-            src="/canvas.png"
-            alt="Canvas"
+            src="/icon.png"
+            alt="Icon"
             className="h-10 w-10 sm:h-16 sm:w-16 rounded-md object-cover shadow-sm"
           />
         </a>
