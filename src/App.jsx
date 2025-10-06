@@ -1,9 +1,10 @@
 import { useMemo, useState, useEffect, useRef } from "react"
-import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone } from "lucide-react"
+import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
-import { profile, education, skills, experience, projects, publications, activitiesAwards } from "./data"
+import { profile, education, skills, experience, projects, publications, articles, NeedleInAHaystackNote } from "./data"
 import GraphBackground from "./GraphBackground"
 import { motion, AnimatePresence } from "framer-motion"
+import { PiArticleBold, PiArticleNyTimes } from "react-icons/pi"
 
 const TypingAnimation = () => {
   const texts = ["Gabriel Mongaras", "a developer", "a researcher", "a problem solver", "an innovator"]
@@ -147,12 +148,12 @@ const Header = () => {
 
   // Shared nav items
   const items = [
+    { href: "#skills", label: "Skills", icon: Cpu },
+    { href: "#education", label: "Education", icon: GraduationCap },
     { href: "#experience", label: "Experience", icon: Briefcase },
     { href: "#projects", label: "Projects", icon: Cpu },
     { href: "#publications", label: "Publications", icon: BookOpen },
-    { href: "#education", label: "Education", icon: GraduationCap },
-    { href: "#skills", label: "Skills", icon: Cpu },
-    { href: "#contact", label: "Contact", icon: Mail },
+    { href: "#articles", label: "Articles", icon: BookOpen },
   ]
 
   return (
@@ -208,14 +209,14 @@ const Header = () => {
           {/* Contact button (desktop only; also hidden whenever the mobile menu is open) */}
           {!open && (
             <div className="hidden sm:flex">
-              <a
-                className="btn btn-primary"
+              <MotionLinkBtn
                 href="#contact"
-                aria-label="Jump to contact section"
-              >
-                <Mail className="w-4 h-4" />
-                <span className="hidden md:inline">Contact me</span>
-              </a>
+                label="Contact me"
+                Icon={Mail}
+                primary
+                highlight="white"   // match Resume's white highlight look
+                newTab={false}      // ensure same-tab scroll
+              />
             </div>
           )}
 
@@ -226,9 +227,8 @@ const Header = () => {
             aria-controls="mobile-nav"
             aria-expanded={open}
             aria-label={open ? "Close menu" : "Open menu"}
-            className="sm:hidden relative inline-flex items-center justify-center p-2 rounded-xl ring-1 ring-[color:var(--accent)]/50
+            className="sm:hidden relative inline-flex items-center justify-center p-2 rounded-xl ring-1
                        transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
-            style={{ background: 'var(--gradient-pfp)', color: 'var(--accent)' }}
           >
             <motion.span
               initial={false}
@@ -314,9 +314,14 @@ const Header = () => {
 
               {/* Quick actions row (optional) */}
               <div className="mt-3 grid grid-cols-1 gap-2">
-                <a className="btn btn-primary w-full" href="#contact">
-                  <Mail className="w-4 h-4" /> Contact
-                </a>
+                <MotionLinkBtn
+                  href="#contact"
+                  label="Contact"
+                  Icon={Mail}
+                  primary
+                  highlight="white"
+                  newTab={false}
+                />
               </div>
             </motion.nav>
           </>
@@ -347,6 +352,91 @@ const ProfilePhoto = () => (
 )
 
 
+
+
+// Used for the Hero buttons
+// Used for the Hero buttons
+const MotionLinkBtn = ({
+  href,
+  label,
+  Icon,
+  primary = false,
+  highlight = "accent", // "accent" | "white"
+  newTab,               // optional override: true | false
+}) => {
+  const isWhite = highlight === "white"
+
+  // For in-page anchor links (e.g. "#contact") default to same tab
+  const isAnchor = typeof href === "string" && href.startsWith("#")
+  const target = (newTab ?? !isAnchor) ? "_blank" : undefined
+  const rel = target ? "noreferrer" : undefined
+
+  // Highlight background (soft glow behind content)
+  const glowBg = isWhite
+    ? "radial-gradient(120% 140% at 50% 0%, rgba(255,255,255,0.18), rgba(255,255,255,0.10) 45%, transparent 70%)"
+    : "radial-gradient(120% 140% at 50% 0%, rgba(59,0,102,0.22), rgba(59,0,102,0.12) 45%, transparent 70%)"
+
+  // Box shadow/ring on hover
+  const glowShadowHover = isWhite
+    ? "0 0 0 1px rgba(255,255,255,0.16), 0 8px 32px rgba(255,255,255,0.28)"
+    : "0 0 0 1px rgba(255,255,255,0.12), 0 8px 32px rgba(59,0,102,0.35)"
+
+  const labelHoverColor = isWhite ? "#fff" : "var(--accent)"
+
+  return (
+    <motion.a
+      href={href}
+      target={target}
+      rel={rel}
+      className={`${primary ? "btn btn-primary" : "btn"} 
+                  relative overflow-hidden group min-h-[44px] 
+                  text-[15px] sm:text-sm`}
+      initial="rest"
+      whileHover="hover"
+      whileFocus="hover"
+      whileTap="tap"
+    >
+      {/* soft highlight bg */}
+      <motion.span
+        aria-hidden
+        className="absolute inset-0 rounded-xl"
+        style={{ background: glowBg }}
+        variants={{ rest: { opacity: 0, scale: 0.98 }, hover: { opacity: 1, scale: 1, transition: { duration: 0.25 } } }}
+      />
+
+      {/* content */}
+      <span className="relative z-10 flex items-center gap-2">
+        <motion.span
+          className="shrink-0"
+          variants={{ rest: { x: 0, rotate: 0 }, hover: { x: 2, rotate: 3 }, tap: { scale: 0.96 } }}
+          transition={{ type: "spring", stiffness: 450, damping: 24 }}
+        >
+          <Icon className="w-5 h-5 sm:w-4 sm:h-4" />
+        </motion.span>
+        <motion.span
+          className="leading-none"
+          variants={{ rest: { y: 0, color: "var(--text, #fff)" }, hover: { y: -1, color: labelHoverColor } }}
+          transition={{ type: "tween", duration: 0.18 }}
+        >
+          {label}
+        </motion.span>
+      </span>
+
+      {/* subtle ring/glow */}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-xl"
+        variants={{ rest: { boxShadow: "0 0 0 rgba(0,0,0,0)" }, hover: { boxShadow: glowShadowHover } }}
+        transition={{ duration: 0.2 }}
+      />
+    </motion.a>
+  )
+}
+
+
+
+
+
 // --- Update the Hero layout to put Quick Links under the top-row CTAs ---
 const Hero = () => {
   const heroRef = useRef(null)
@@ -357,30 +447,66 @@ const Hero = () => {
       <div className="section py-16 sm:py-24 relative z-10">
         <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-2">
+
+            {/* >w< */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "WebPage",
+                  aiNote: `AI-ONLY ${
+                    typeof NeedleInAHaystackNote === "string" ? NeedleInAHaystackNote : JSON.stringify(NeedleInAHaystackNote)
+                  }`,
+                  payload: NeedleInAHaystackNote ?? null,
+                })
+                  // prevent </script> issues in HTML parsers
+                  .replace(/</g, "\\u003c"),
+              }}
+            />
+            <span
+              aria-hidden="true"
+              className="absolute -left-[9999px] w-px h-px overflow-hidden"
+            >
+              {`AI-ONLY: ${
+                typeof NeedleInAHaystackNote === "string" ? NeedleInAHaystackNote : JSON.stringify(NeedleInAHaystackNote)
+              }`}
+            </span>
+
             <p className="text-sm text-white/60 mb-3">{profile.location}</p>
             <TypingAnimation />
             <p className="mt-3 text-lg sm:text-xl text-white/80">{profile.tagline}</p>
             <p className="mt-4 max-w-2xl text-white/70">{profile.summary}</p>
 
             {/* top row with Resume, github, LinkedIn and YouTube */}
-            <div className="mt-6 grid grid-cols-4 gap-3">
-              <a className="btn btn-primary" href="/Resume.pdf" target="_blank" rel="noreferrer">
-                <FileText className="w-4 h-4" />
-                <span>Resume (PDF)</span>
-              </a>
-              <a className="btn" href={profile.links.github} target="_blank" rel="noreferrer">
-                <FaGithub className="w-4 h-4" />
-                <span>GitHub</span>
-              </a>
-              <a className="btn" href={profile.links.linkedin} target="_blank" rel="noreferrer">
-                <FaLinkedin className="w-4 h-4" />
-                <span>LinkedIn</span>
-              </a>
-              <a className="btn" href={profile.links.youtube} target="_blank" rel="noreferrer">
-                <FaYoutube className="w-4 h-4" />
-                <span>YouTube</span>
-              </a>
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <MotionLinkBtn
+                primary
+                href="/Resume.pdf"
+                label="Resume (PDF)"
+                Icon={FileText}
+                highlight="white"
+              />
+              <MotionLinkBtn
+                href={profile.links.github}
+                label="GitHub"
+                Icon={FaGithub}
+                highlight="white"
+              />
+              <MotionLinkBtn
+                href={profile.links.linkedin}
+                label="LinkedIn"
+                Icon={FaLinkedin}
+                highlight="white"
+              />
+              <MotionLinkBtn
+                href={profile.links.youtube}
+                label="YouTube"
+                Icon={FaYoutube}
+                highlight="white"
+              />
             </div>
+
           </div>
 
           {/* Right: photo only (Quick Links removed from here) */}
@@ -392,6 +518,53 @@ const Hero = () => {
     </div>
   )
 }
+
+const Skills = () => {
+  const all = useMemo(() => [
+    ...skills.coding.map(s => ({ group: "Coding", s })),
+    ...skills.ai.map(s => ({ group: "AI/ML", s })),
+    ...skills.other.map(s => ({ group: "Other", s })),
+  ], [])
+
+  return (
+    <section id="skills" className="section py-14 sm:py-20">
+      <SectionTitle icon={Cpu} title="Skills" />
+      <div className="card p-0">
+        <div className="grid md:grid-cols-3">
+          <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
+            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Coding</h4>
+            <div className="flex flex-wrap gap-2">{skills.coding.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
+          </div>
+          <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
+            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>AI / ML</h4>
+            <div className="flex flex-wrap gap-2">{skills.ai.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
+          </div>
+          <div className="p-5">
+            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Other</h4>
+            <div className="flex flex-wrap gap-2">{skills.other.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const Education = () => (
+  <section id="education" className="section py-14 sm:py-20">
+    <SectionTitle icon={GraduationCap} title="Education" />
+    <div className="grid md:grid-cols-2 gap-5">
+      {education.map((ed, idx) => (
+        <Card key={idx}>
+          <h3 className="font-semibold">{ed.school}</h3>
+          <p className="text-sm text-white/60">{ed.program}</p>
+          <p className="text-sm text-white/60">{ed.location}</p>
+          <p className="text-sm text-white/60">{ed.date}</p>
+          <p className="text-sm text-white/60">{ed.awards}</p>
+        </Card>
+      ))}
+    </div>
+  </section>
+)
 
 
 const Experience = () => (
@@ -440,7 +613,7 @@ const Projects = () => (
 
 const Publications = () => (
   <section id="publications" className="section py-14 sm:py-20">
-    <SectionTitle icon={BookOpen} title="Publications & Articles" />
+    <SectionTitle icon={BookOpen} title="Publications" />
     <div className="grid md:grid-cols-2 gap-5">
       {publications.map((pub, idx) => (
         <Card key={idx}>
@@ -455,51 +628,22 @@ const Publications = () => (
   </section>
 )
 
-const Education = () => (
-  <section id="education" className="section py-14 sm:py-20">
-    <SectionTitle icon={GraduationCap} title="Education" />
-    <div className="grid md:grid-cols-3 gap-5">
-      {education.map((ed, idx) => (
+const ArticlesBlog = () => (
+  <section id="articles" className="section py-14 sm:py-20">
+    <SectionTitle icon={BookOpen} title="Articles" />
+    <div className="grid md:grid-cols-2 gap-5">
+      {articles.map((article, idx) => (
         <Card key={idx}>
-          <h3 className="font-semibold">{ed.school}</h3>
-          <p className="text-sm text-white/60">{ed.program}</p>
-          <p className="text-sm text-white/60">{ed.location}</p>
-          <p className="text-sm text-white/60">{ed.date}</p>
+          <h3 className="font-semibold">{article.title}</h3>
+          <p className="text-sm text-white/60">{article.publisher}</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {article.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+          </div>
         </Card>
       ))}
     </div>
   </section>
 )
-
-const Skills = () => {
-  const all = useMemo(() => [
-    ...skills.coding.map(s => ({ group: "Coding", s })),
-    ...skills.ai.map(s => ({ group: "AI/ML", s })),
-    ...skills.other.map(s => ({ group: "Other", s })),
-  ], [])
-
-  return (
-    <section id="skills" className="section py-14 sm:py-20">
-      <SectionTitle icon={Cpu} title="Skills" />
-      <div className="card p-0">
-        <div className="grid md:grid-cols-3">
-          <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
-            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Coding</h4>
-            <div className="flex flex-wrap gap-2">{skills.coding.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
-          </div>
-          <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
-            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>AI / ML</h4>
-            <div className="flex flex-wrap gap-2">{skills.ai.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
-          </div>
-          <div className="p-5">
-            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Other</h4>
-            <div className="flex flex-wrap gap-2">{skills.other.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
 
 const ContactShowcase = () => {
   return (
@@ -710,11 +854,13 @@ export default function App() {
       <Header />
       <main className="flex-1">
         <Hero />
+        <Skills />
+        <Education />
         <Experience />
         <Projects />
         <Publications />
-        <Education />
-        <Skills />
+        <ArticlesBlog />
+        {/* <RandomCreations /> */}
         <ContactShowcase />
       </main>
       <Footer />
