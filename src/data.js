@@ -4,14 +4,15 @@ export const profile = {
   tagline: "AI Engineer • Researcher • Builder",
   summary: "Software Engineer focused on AI research, diffusion models, and efficient attention mechanisms. Experience at Google, Amazon, Meta, and Etched. Passionate about building and scaling AI systems.",
   location: "Dallas, TX",
-  email: "gmongaras@smu.edu",
-  emailAlt: "gabriel@mongaras.com",
+  email: "gabriel@mongaras.com",
+  emailAlt: "gmongaras@smu.edu",
   phone: "512-659-5405",
   links: {
     site: "https://gabrielm.cc",
     github: "https://github.com/gmongaras",
     linkedin: "https://www.linkedin.com/in/gmongaras",
-    youtube: "https://www.youtube.com/@gabrielmongaras"
+    youtube: "https://www.youtube.com/@gabrielmongaras",
+    x: "https://x.com/gmongaras",
   }
 }
 

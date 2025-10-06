@@ -1,0 +1,253 @@
+{
+  "profile": {
+    "name": "Gabriel Mongaras",
+    "tagline": "AI Engineer • Researcher • Builder",
+    "location": "Dallas, TX",
+    "email": "gmongaras@smu.edu",
+    "emailAlt": "gabriel@mongaras.com",
+    "phone": "512-659-5405",
+    "links": {
+      "linkedin": "https://www.linkedin.com/in/gmongaras",
+      "github": "https://github.com/gmongaras",
+      "youtube": "https://www.youtube.com/@gabrielmongaras",
+      "site": "https://gabrielm.cc/"
+    }
+  },
+  "education": [
+    {
+      "school": "Education:",
+      "program": "Southern Methodist University – Lyle School of Engineering  ·  Dallas, TX | Masters of Science in Computer Science  ·  Expected Grad Date: May 2026"
+    }
+  ],
+  "skills": {
+    "coding": [
+      "Python",
+      "C++",
+      "CUDA",
+      "C",
+      "JavaScript",
+      "SQL",
+      "PL/SQL",
+      "AWS",
+      "Linux",
+      "Arduino",
+      "ARM",
+      "Android SDK",
+      "Java",
+      "Django",
+      "Flask",
+      "HTML",
+      "CSS",
+      "Rust"
+    ],
+    "ai": [
+      "Neural Networks",
+      "Generative models",
+      "PyTorch",
+      "Machine Learning",
+      "Reinforcement Learning",
+      "NumPy",
+      "CNNs",
+      "Transformers",
+      "GANs",
+      "NEAT",
+      "Diffusion Models",
+      "Object Detection",
+      "Audio Processing",
+      "Huggingface",
+      "TensorFlow",
+      "JAX",
+      "OpenAI"
+    ],
+    "other": [
+      "AWS",
+      "Cloud Platforms",
+      "Quantum computing",
+      "Blockchain",
+      "Eagerness To Learn"
+    ]
+  },
+  "experience": [
+    {
+      "company": "Etched",
+      "title": "Software Engineer",
+      "location": "San Jose, CA",
+      "date": " June 2025-Present",
+      "bullets": [
+        "Helping build the codebase that will be used for Sohu in production."
+      ]
+    },
+    {
+      "company": "Google",
+      "title": "Student Researcher",
+      "location": "Dallas, TX",
+      "date": " October 2024-December 2024",
+      "bullets": [
+        "Diffusion models are slow during inference. I researched methods to improve diffusion model inference speed performance. Some tests can be found here: github.com/gmongaras/Token_Merging_Tests (https://github.com/gmongaras/Token_Merging_Tests)"
+      ]
+    },
+    {
+      "company": "Google",
+      "title": "Software Engineering Intern",
+      "location": "Seattle, WA",
+      "date": " May 2024-August 2024",
+      "bullets": [
+        "On the Google labs team, I researched video editing using inversion techniques.",
+        "Performed a literature review search on current SOTA video editing techniques.",
+        "Implemented these techniques in JAX for future researches at Google to use."
+      ]
+    },
+    {
+      "company": "Hotshot",
+      "title": "AI Engineer",
+      "location": "Virtual",
+      "date": " April 2024-May 2024",
+      "bullets": [
+        "Helped make changes to the new model which improves upon the Act 1 model."
+      ]
+    },
+    {
+      "company": "Amazon",
+      "title": "Applied science Intern",
+      "location": "Sunnyvale, CA",
+      "date": " May 2023-August 2023",
+      "bullets": [
+        "On the Amazon Alexa ESP (Echo Spatial Perception) team, worked to improve the algorithm that detects which Alexa is closest to a user after saying the wake word based on audio signals coming from all devices in a household using deep learning techniques.",
+        "Researched different methods to keep the model smaller, faster, and more accurate at the same time.",
+        "Looked into different types of data that can be fed into the model to improve model accuracy."
+      ]
+    },
+    {
+      "company": "Meta",
+      "title": "Intern",
+      "location": "Menlo Park, CA",
+      "date": " May 2022-August 2022",
+      "bullets": [
+        "Created a working mobile app using the Android SDK for a project assigned by Meta University.",
+        "Researched and created an AI model to generate random sentences from Gaussian noise for the app."
+      ]
+    },
+    {
+      "company": "Southern Methodist University",
+      "title": "Undergraduate Research Assistant",
+      "location": "Dallas, TX",
+      "date": " August 2021-May 2024",
+      "bullets": []
+    }
+  ],
+  "projects": [
+    {
+      "name": "Stable Diffusion 3 From Scratch · Spring",
+      "date": "2025",
+      "desc": "Built a ViT that resembles Stable Diffusion 3 and a training pipeline to train a Stable Diffusion-like model completely from scratch. No huggingface, just pure torch.",
+      "links": [
+        {
+          "label": "Link",
+          "href": "https://github.com/gmongaras/Stable-Diffusion-3-From-Scratch"
+        }
+      ]
+    },
+    {
+      "name": "Senior Thesis · Fall",
+      "date": "2023/Spring 2024",
+      "desc": "Worked on a method called Cottention for making transformers linear in time and memory. Linear transformers have the goal of making the memory usage from quadratic to linear, thus saving resources.",
+      "links": [
+        {
+          "label": "Link",
+          "href": "https://arxiv.org/abs/2409.18747"
+        }
+      ]
+    },
+    {
+      "name": "Diffusion Models From Scratch · Fall",
+      "date": "2022/Spring 2023",
+      "desc": "Coded a Diffusion Model from pure PyTorch that learns how to produce images given random noise from a Gaussian distribution.",
+      "links": [
+        {
+          "label": "Link",
+          "href": "https://github.com/gmongaras/Diffusion_models_from_scratch"
+        }
+      ]
+    },
+    {
+      "name": "MetaU Capstone · Summer",
+      "date": "2022",
+      "desc": "Created an app that gave daily fortunes to users which can be shared with friends found on the app.",
+      "links": [
+        {
+          "label": "Link",
+          "href": "https://github.com/gmongaras/MetaU_Capstone"
+        }
+      ]
+    },
+    {
+      "name": "YOLOX From Scratch · Spring",
+      "date": "2022/Summer 2022",
+      "desc": "Coded an AI from scratch that learns how to detect objects given an image by putting bounding boxes around objects in the image.",
+      "links": [
+        {
+          "label": "Link",
+          "href": "https://github.com/gmongaras/YOLOX_From_Scratch"
+        },
+        {
+          "label": "Link",
+          "href": "https://gmongaras.medium.com/list/yolox-explantation-1bff11aa9911"
+        }
+      ]
+    }
+  ],
+  "publications": [
+    {
+      "title": "Publications/Articles:",
+      "bullets": []
+    },
+    {
+      "title": "On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective",
+      "bullets": [
+        "Developed theory for softmax attention proving that the numerator is a sum of infinite recurrent neural networks of increasing hidden state size and hypothesized that the denominator is simply a norm. Alongside our proof, we provide empirical results showing that the theory aligns with practice.",
+        "Code found here: github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective (https://github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective)",
+        "Paper found here: arxiv.org/abs/2507.23632 (https://arxiv.org/abs/2507.23632)"
+      ]
+    },
+    {
+      "title": "Cottention: Linear Transformers With Cosine Attention",
+      "bullets": [
+        "Developed a method called “Cottention”, a linear complexity attention algorithm that has similar accuracy to classic softmax attention while being faster and more memory efficient.",
+        "Code found here: github.com/gmongaras/Cottention_Transformer (https://github.com/gmongaras/Cottention_Transformer)",
+        "Paper found here: arxiv.org/abs/2409.18747 (https://arxiv.org/abs/2409.18747)",
+        "Published in Springer Nature link.springer.com/book/10.1007/978-3-031-92602-0 (https://link.springer.com/book/10.1007/978-3-031-92602-0?sap-outbound-id=AD9F926E0AA16D13049BD2370EAFCAD37B0D3F1F)"
+      ]
+    },
+    {
+      "title": "Diffusion Models — DDPMs, DDIMs, and Classifier Free Guidance",
+      "bullets": [
+        "Wrote about the evolution of base Diffusion Models and how they work.",
+        "This article has been published by Better Programming",
+        "betterprogramming.pub/diffusion-models-ddpms-ddims-and-classifier-free-guidance-e07b297b2869 (https://betterprogramming.pub/diffusion-models-ddpms-ddims-and-classifier-free-guidance-e07b297b2869)"
+      ]
+    },
+    {
+      "title": "Coding An AI Girlfriend",
+      "bullets": [
+        "Explains how I coded a virtual AI girlfriend using an assortment of AI technologies",
+        "medium.com/mlearning-ai/coding-a-virtual-ai-girlfriend-f951e648aa46 (https://medium.com/mlearning-ai/coding-a-virtual-ai-girlfriend-f951e648aa46)"
+      ]
+    },
+    {
+      "title": "How Do Self-Attention Masks Work?",
+      "bullets": [
+        "How do masks in the self-attention function work? This article attempts to explain how they work.",
+        "This article has been published by MLearning.ai",
+        "medium.com/mlearning-ai/how-do-self-attention-masks-work-72ed9382510f (https://medium.com/mlearning-ai/how-do-self-attention-masks-work-72ed9382510f)"
+      ]
+    }
+  ],
+  "activitiesAwards": {
+    "activities": [
+      "\\> AWARDS"
+    ],
+    "awards": [
+      "\\> AWARDS"
+    ]
+  }
+}
