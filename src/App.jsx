@@ -4,7 +4,6 @@ import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { profile, education, skills, experience, projects, publications, articles, NeedleInAHaystackNote } from "./data"
 import GraphBackground from "./GraphBackground"
 import { motion, AnimatePresence } from "framer-motion"
-import { PiArticleBold, PiArticleNyTimes } from "react-icons/pi"
 
 const TypingAnimation = () => {
   const texts = ["Gabriel Mongaras", "a developer", "a researcher", "a problem solver", "an innovator"]
