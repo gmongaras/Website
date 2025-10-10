@@ -111,9 +111,10 @@ const LinkIcon = ({ href, label }) => (
   </a>
 )
 
-const Header = () => {
+const Header = ({ onMobileMenuToggle }) => {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [menuTop, setMenuTop] = useState('92px')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 0)
@@ -122,20 +123,44 @@ const Header = () => {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Lock body scroll and close on Escape
+  // Calculate menu position dynamically
+  useEffect(() => {
+    const calculateMenuPosition = () => {
+      const header = document.querySelector('header')
+      if (header) {
+        const headerRect = header.getBoundingClientRect()
+        const headerBottom = headerRect.bottom
+        setMenuTop(`${headerBottom + 12}px`)
+      }
+    }
+    
+    calculateMenuPosition()
+    window.addEventListener('scroll', calculateMenuPosition, { passive: true })
+    window.addEventListener('resize', calculateMenuPosition)
+    
+    return () => {
+      window.removeEventListener('scroll', calculateMenuPosition)
+      window.removeEventListener('resize', calculateMenuPosition)
+    }
+  }, [])
+
+  // Close on Escape
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") setOpen(false) }
-    document.body.style.overflow = open ? "hidden" : ""
     window.addEventListener("keydown", onKey)
-    return () => {
-      document.body.style.overflow = ""
-      window.removeEventListener("keydown", onKey)
-    }
-  }, [open])
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
 
-  // C) Auto-close the sheet if resizing to >= sm (640px)
+  // Notify parent component when mobile menu state changes
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 640px)')
+    if (onMobileMenuToggle) {
+      onMobileMenuToggle(open)
+    }
+  }, [open, onMobileMenuToggle])
+
+  // C) Auto-close the sheet if resizing to >= md (768px)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
     const onChange = (e) => { if (e.matches) setOpen(false) }
     if (mq.addEventListener) mq.addEventListener('change', onChange)
     else mq.addListener(onChange) // older Safari
@@ -163,12 +188,12 @@ const Header = () => {
           <img
             src="/icon.png"
             alt="Icon"
-            className="h-10 w-10 sm:h-16 sm:w-16 rounded-md object-cover shadow-sm"
+            className="h-10 w-10 md:h-16 md:w-16 rounded-md object-cover shadow-sm"
           />
         </a>
 
         {/* Desktop nav */}
-        <nav className="hidden sm:flex items-center gap-1 text-sm">
+        <nav className="hidden md:flex items-center gap-1 text-sm">
           {items.map(({ href, label }) => (
             <a
               key={href}
@@ -207,7 +232,7 @@ const Header = () => {
         <div className="flex items-center gap-2">
           {/* Contact button (desktop only; also hidden whenever the mobile menu is open) */}
           {!open && (
-            <div className="hidden sm:flex">
+            <div className="hidden md:flex">
               <MotionLinkBtn
                 href="#contact"
                 label="Contact me"
@@ -222,11 +247,15 @@ const Header = () => {
           {/* Mobile menu button */}
           <button
             type="button"
-            onClick={() => setOpen(v => !v)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setOpen(v => !v)
+            }}
             aria-controls="mobile-nav"
             aria-expanded={open}
             aria-label={open ? "Close menu" : "Open menu"}
-            className="sm:hidden relative inline-flex items-center justify-center p-2 rounded-xl ring-1
+            className="md:hidden relative inline-flex items-center justify-center p-2 rounded-xl ring-1
                        transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
           >
             <motion.span
@@ -265,7 +294,8 @@ const Header = () => {
             {/* Sheet */}
             <motion.nav
               id="mobile-nav"
-              className="fixed z-50 left-3 right-3 top-3 rounded-2xl border border-white/10 bg-black/90 p-4 shadow-2xl"
+              className="fixed z-50 left-3 right-3 rounded-2xl border border-white/10 bg-black/90 p-4 shadow-2xl"
+              style={{ top: menuTop }}
               initial={{ y: -20, opacity: 0, scale: 0.98 }}
               animate={{ y: 0, opacity: 1, scale: 1, transition: { type: "spring", stiffness: 320, damping: 24 } }}
               exit={{ y: -12, opacity: 0, scale: 0.98 }}
@@ -313,14 +343,16 @@ const Header = () => {
 
               {/* Quick actions row (optional) */}
               <div className="mt-3 grid grid-cols-1 gap-2">
-                <MotionLinkBtn
+                <a
                   href="#contact"
-                  label="Contact"
-                  Icon={Mail}
-                  primary
-                  highlight="white"
-                  newTab={false}
-                />
+                  onClick={() => setOpen(false)}
+                  className="btn btn-primary relative overflow-hidden group min-h-[44px] text-[15px] sm:text-sm whitespace-nowrap"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Mail className="w-5 h-5 sm:w-4 sm:h-4" />
+                    <span>Contact</span>
+                  </span>
+                </a>
               </div>
             </motion.nav>
           </>
@@ -333,7 +365,7 @@ const Header = () => {
 
 
 const ProfilePhoto = () => (
-  <div className="relative group mx-auto md:mx-0 w-full max-w-[15rem] sm:max-w-[18rem] md:max-w-[20rem] lg:max-w-none">
+  <div className="relative group mx-auto w-full max-w-[15rem] sm:max-w-[18rem] md:max-w-[20rem] lg:max-w-none">
     {/* soft accent glow behind the photo */}
     <div
       className="absolute inset-0 rounded-2xl blur-2xl pointer-events-none"
@@ -389,7 +421,7 @@ const MotionLinkBtn = ({
       rel={rel}
       className={`${primary ? "btn btn-primary" : "btn"} 
                   relative overflow-hidden group min-h-[44px] 
-                  text-[15px] sm:text-sm`}
+                  text-[15px] sm:text-sm whitespace-nowrap`}
       initial="rest"
       whileHover="hover"
       whileFocus="hover"
@@ -511,7 +543,7 @@ const Hero = () => {
           {/* Right: photo only (Quick Links removed from here) */}
           <div className="space-y-4">
             <ProfilePhoto />
-          </div>
+            </div>
         </div>
       </div>
     </div>
@@ -783,13 +815,13 @@ const ContactShowcase = () => {
                   <p className="font-semibold">YouTube</p>
                   <p className="text-sm text-white/60">Talks & demos</p>
                 </div>
-              </div>
-            </div>
+          </div>
+          </div>
             <div className="mt-3">
               <a className="btn w-full" href={profile.links.youtube} target="_blank" rel="noreferrer">
                 Open YouTube <ExternalLink className="w-4 h-4" />
               </a>
-            </div>
+          </div>
           </Card>
         </div>
 
@@ -848,21 +880,29 @@ const Footer = () => (
 )
 
 export default function App() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <Hero />
-        <Skills />
-        <Education />
-        <Experience />
-        <Projects />
-        <Publications />
-        <ArticlesBlog />
-        {/* <RandomCreations /> */}
-        <ContactShowcase />
-      </main>
-      <Footer />
+      <Header onMobileMenuToggle={setIsMobileMenuOpen} />
+      <div className="flex-1 relative">
+        <main>
+          <Hero />
+          <Skills />
+          <Education />
+          <Experience />
+          <Projects />
+          <Publications />
+          <ArticlesBlog />
+          {/* <RandomCreations /> */}
+          <ContactShowcase />
+        </main>
+        <Footer />
+        {/* Blur overlay */}
+        {isMobileMenuOpen && (
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300 pointer-events-none z-30" />
+        )}
+      </div>
     </div>
   )
 }
