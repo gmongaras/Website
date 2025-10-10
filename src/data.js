@@ -12,6 +12,7 @@ export const profile = {
     linkedin: "https://www.linkedin.com/in/gmongaras",
     youtube: "https://www.youtube.com/@gabrielmongaras",
     x: "https://x.com/gmongaras",
+    huggingface: "https://huggingface.co/gmongaras",
   }
 }
 

@@ -1,9 +1,11 @@
 import { useMemo, useState, useEffect, useRef } from "react"
 import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
+import { SiHuggingface } from "react-icons/si"
 import { profile, education, skills, experience, projects, publications, articles, NeedleInAHaystackNote } from "./data"
 import GraphBackground from "./GraphBackground"
 import { motion, AnimatePresence } from "framer-motion"
+
 
 const TypingAnimation = () => {
   const texts = ["Gabriel Mongaras", "a developer", "a researcher", "a problem solver", "an innovator"]
@@ -551,31 +553,86 @@ const Hero = () => {
 }
 
 const Skills = () => {
-  const all = useMemo(() => [
-    ...skills.coding.map(s => ({ group: "Coding", s })),
-    ...skills.ai.map(s => ({ group: "AI/ML", s })),
-    ...skills.other.map(s => ({ group: "Other", s })),
-  ], [])
+  const skillCategories = [
+    {
+      title: "Coding",
+      icon: Cpu,
+      skills: skills.coding,
+      color: "from-blue-500/20 to-purple-500/20",
+      borderColor: "border-blue-500/30"
+    },
+    {
+      title: "AI / ML",
+      icon: BookOpen,
+      skills: skills.ai,
+      color: "from-purple-500/20 to-pink-500/20",
+      borderColor: "border-purple-500/30"
+    },
+    {
+      title: "Other",
+      icon: Briefcase,
+      skills: skills.other,
+      color: "from-green-500/20 to-blue-500/20",
+      borderColor: "border-green-500/30"
+    }
+  ]
 
   return (
     <section id="skills" className="section py-14 sm:py-20">
-      <SectionTitle icon={Cpu} title="Skills" />
-      <div className="card p-0">
-        <div className="grid md:grid-cols-3">
-          <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
-            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Coding</h4>
-            <div className="flex flex-wrap gap-2">{skills.coding.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
-          </div>
-          <div className="p-5 border-b md:border-b-0 md:border-r border-white/10">
-            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>AI / ML</h4>
-            <div className="flex flex-wrap gap-2">{skills.ai.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
-          </div>
-          <div className="p-5">
-            <h4 className="font-semibold mb-3" style={{ color: 'var(--accent)' }}>Other</h4>
-            <div className="flex flex-wrap gap-2">{skills.other.map((c,i)=><Chip key={i}>{c}</Chip>)}</div>
-          </div>
-        </div>
+      <SectionTitle icon={Cpu} title="Skills" subtitle="Technologies & expertise" />
+      
+      <div className="grid md:grid-cols-3 gap-6">
+        {skillCategories.map((category, categoryIndex) => (
+          <motion.div
+            key={category.title}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
+            viewport={{ once: true }}
+            className="group"
+          >
+            <div className="card p-6 h-full hover:bg-white/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg relative">
+              {/* Category Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className={`p-3 rounded-xl bg-gradient-to-br ${category.color} border ${category.borderColor} group-hover:scale-110 transition-transform duration-300`}>
+                  <category.icon className="w-6 h-6" style={{ color: 'var(--accent)' }} />
+                </div>
+                <h3 className="text-xl font-semibold group-hover:text-white transition-colors duration-300">
+                  {category.title}
+                </h3>
+              </div>
+
+              {/* Skills Grid */}
+              <div className="flex flex-wrap gap-2.5">
+                {category.skills.map((skill, skillIndex) => (
+                  <motion.div
+                    key={skill}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ 
+                      duration: 0.3, 
+                      delay: (categoryIndex * 0.1) + (skillIndex * 0.02),
+                      type: "spring",
+                      stiffness: 200
+                    }}
+                    viewport={{ once: true }}
+                    whileHover={{ scale: 1.05 }}
+                    className="group/skill"
+                  >
+                    <span className="chip group-hover/skill:bg-white/15 group-hover/skill:border-white/20 group-hover/skill:text-white transition-all duration-200 cursor-default">
+                      {skill}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Subtle accent line */}
+              <div className="absolute bottom-2 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </div>
+          </motion.div>
+        ))}
       </div>
+
     </section>
   )
 }
@@ -825,13 +882,9 @@ const ContactShowcase = () => {
           </Card>
         </div>
 
-        {/* X (Twitter) — single centered card */}
-        <div className="mt-4 flex justify-center">
-            {/* Match grid column width: 
-                - base: full
-                - sm: (50% - gap/2)
-                - lg: ((100% - 2*gap)/3)
-                (your grid uses gap-4 => 1rem) */}
+        {/* X (Twitter) and Huggingface — two cards centered */}
+        <div className="mt-4 flex justify-center gap-4">
+            {/* Twitter Card */}
             <div className="w-full max-w-full sm:[max-width:calc(50%_-_0.5rem)] lg:[max-width:calc((100%_-_2rem)/3)]">
               <Card>
                 <div className="flex items-start justify-between gap-3">
@@ -859,7 +912,37 @@ const ContactShowcase = () => {
                 </div>
               </Card>
             </div>
+            
+            {/* Hugging Face Card */}
+            <div className="w-full max-w-full sm:[max-width:calc(50%_-_0.5rem)] lg:[max-width:calc((100%_-_2rem)/3)]">
+              <Card>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-accent/30 border border-accent/40">
+                      <SiHuggingface className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">Hugging Face</p>
+                      <p className="text-sm text-white/60">
+                        @gmongaras
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <a
+                    className="btn w-full"
+                    href={profile.links?.huggingface ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open Hugging Face <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </Card>
+            </div>
           </div>
+
 
       </div>
     </section>
@@ -871,8 +954,8 @@ const ContactShowcase = () => {
 
 const Footer = () => (
   <footer id="footer" className="section py-12 border-t border-white/10" style={{ scrollMarginTop: 'var(--header-h, 80px)' }}>
-    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-start sm:items-center gap-6">
-      <div className="text-white/60 text-sm justify-self-end">
+    <div className="flex justify-center">
+      <div className="text-white/60 text-sm">
         <p>© {new Date().getFullYear()} {profile.name}. All rights reserved.</p>
       </div>
     </div>
