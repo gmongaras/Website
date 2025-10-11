@@ -53,3 +53,12 @@ html, body, #root {
 .link {
   @apply inline-flex items-center gap-1 hover:underline decoration-accent/60 underline-offset-4;
 }
+
+/* Hide scrollbars */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}

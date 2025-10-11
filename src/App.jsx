@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react"
-import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio } from "lucide-react"
+import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { SiHuggingface } from "react-icons/si"
 import { profile, education, skills, experience, projects, publications, articles, NeedleInAHaystackNote } from "./data"
@@ -105,6 +105,226 @@ const CopyButton = ({
 const Chip = ({ children }) => <span className="chip">{children}</span>
 
 const Card = ({ children }) => <div className="card p-5">{children}</div>
+
+const HorizontalScrollContainer = ({ children, className = "" }) => {
+  const scrollRef = useRef(null)
+  const scrollBarRef = useRef(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [hasOverflow, setHasOverflow] = useState(false)
+
+  const updateScrollState = () => {
+    if (!scrollRef.current) return
+    
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+    const maxScrollLeft = scrollWidth - clientWidth
+    
+    setCanScrollLeft(scrollLeft > 0)
+    setCanScrollRight(scrollLeft < maxScrollLeft)
+    setScrollProgress(maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0)
+    setHasOverflow(scrollWidth > clientWidth)
+  }
+
+  useEffect(() => {
+    updateScrollState()
+    const handleResize = () => updateScrollState()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' })
+    }
+  }
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' })
+    }
+  }
+
+  const handleScrollBarClick = (e) => {
+    if (!scrollRef.current || !scrollBarRef.current || isDragging) return
+    
+    const rect = scrollBarRef.current.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const scrollBarWidth = rect.width
+    const clickPercentage = clickX / scrollBarWidth
+    
+    const { scrollWidth, clientWidth } = scrollRef.current
+    const maxScrollLeft = scrollWidth - clientWidth
+    const targetScrollLeft = clickPercentage * maxScrollLeft
+    
+    scrollRef.current.scrollTo({ left: targetScrollLeft, behavior: 'smooth' })
+  }
+
+  const handleMouseDown = (e) => {
+    if (!scrollRef.current || !scrollBarRef.current) return
+    
+    e.preventDefault()
+    setIsDragging(true)
+    
+    const rect = scrollBarRef.current.getBoundingClientRect()
+    const startX = e.clientX - rect.left
+    const scrollBarWidth = rect.width
+    const startPercentage = startX / scrollBarWidth
+    
+    const { scrollWidth, clientWidth } = scrollRef.current
+    const maxScrollLeft = scrollWidth - clientWidth
+    const startScrollLeft = startPercentage * maxScrollLeft
+    
+    const handleMouseMove = (e) => {
+      const currentX = e.clientX - rect.left
+      const currentPercentage = Math.max(0, Math.min(1, currentX / scrollBarWidth))
+      const targetScrollLeft = currentPercentage * maxScrollLeft
+      
+      scrollRef.current.scrollTo({ left: targetScrollLeft, behavior: 'auto' })
+    }
+    
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      {/* Scrollable content */}
+      <div
+        ref={scrollRef}
+        onScroll={updateScrollState}
+        className="flex gap-5 overflow-x-hidden scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {children}
+      </div>
+
+      {/* Only show scroll controls if there's overflow */}
+      {hasOverflow && (
+        <>
+          {/* Custom scroll indicator - clickable and draggable */}
+          <div className="mt-6 flex justify-center">
+            <div 
+              ref={scrollBarRef}
+              onClick={handleScrollBarClick}
+              onMouseDown={handleMouseDown}
+              className={`relative w-40 h-2 bg-white/5 rounded-full overflow-hidden cursor-pointer border transition-all duration-200 group select-none ${
+                isDragging 
+                  ? 'border-accent/60 bg-white/10 scale-105' 
+                  : 'border-white/10 hover:border-white/20'
+              }`}
+            >
+              {/* Background track with subtle gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full" />
+              
+              {/* Progress indicator with accent color */}
+              <div
+                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-300 ${
+                  isDragging ? 'scale-y-125' : 'group-hover:scale-y-110'
+                }`}
+                style={{
+                  width: '25%',
+                  left: `${scrollProgress * 75}%`,
+                  background: 'linear-gradient(90deg, var(--accent), rgba(var(--accent-rgb), 0.8))',
+                  boxShadow: isDragging 
+                    ? '0 0 12px rgba(var(--accent-rgb), 0.5)' 
+                    : '0 0 8px rgba(var(--accent-rgb), 0.3)'
+                }}
+              />
+              
+              {/* Subtle glow effect */}
+              <div
+                className={`absolute top-0 left-0 h-full rounded-full transition-opacity duration-200 ${
+                  isDragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+                style={{
+                  width: '25%',
+                  left: `${scrollProgress * 75}%`,
+                  background: 'radial-gradient(ellipse at center, rgba(var(--accent-rgb), 0.4), transparent)',
+                  filter: 'blur(4px)'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Navigation buttons with enhanced styling */}
+          <div className="flex justify-center gap-4 mt-4">
+            <button
+              onClick={scrollLeft}
+              disabled={!canScrollLeft}
+              className={`group relative flex items-center justify-center w-14 h-14 rounded-2xl border transition-all duration-300 overflow-hidden ${
+                canScrollLeft
+                  ? 'border-white/20 bg-white/5 hover:bg-white/10 hover:border-accent/50 hover:shadow-xl hover:shadow-accent/25 hover:scale-105 active:scale-95'
+                  : 'border-white/5 bg-white/2 cursor-not-allowed opacity-30'
+              }`}
+            >
+              {/* Subtle background glow */}
+              <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${
+                canScrollLeft ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+              }`} style={{
+                background: 'radial-gradient(120% 140% at 50% 0%, rgba(var(--accent-rgb), 0.15), rgba(var(--accent-rgb), 0.05) 45%, transparent 70%)'
+              }} />
+              
+              {/* Icon with enhanced styling */}
+              <ChevronLeft className={`relative z-10 w-6 h-6 transition-all duration-300 ${
+                canScrollLeft 
+                  ? 'text-white/80 group-hover:text-accent group-hover:scale-110' 
+                  : 'text-white/40'
+              }`} />
+              
+              {/* Subtle ring effect on hover */}
+              <div className={`absolute inset-0 rounded-2xl transition-all duration-300 ${
+                canScrollLeft ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+              }`} style={{
+                boxShadow: '0 0 0 1px rgba(var(--accent-rgb), 0.3)',
+                filter: 'blur(1px)'
+              }} />
+            </button>
+            
+            <button
+              onClick={scrollRight}
+              disabled={!canScrollRight}
+              className={`group relative flex items-center justify-center w-14 h-14 rounded-2xl border transition-all duration-300 overflow-hidden ${
+                canScrollRight
+                  ? 'border-white/20 bg-white/5 hover:bg-white/10 hover:border-accent/50 hover:shadow-xl hover:shadow-accent/25 hover:scale-105 active:scale-95'
+                  : 'border-white/5 bg-white/2 cursor-not-allowed opacity-30'
+              }`}
+            >
+              {/* Subtle background glow */}
+              <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${
+                canScrollRight ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+              }`} style={{
+                background: 'radial-gradient(120% 140% at 50% 0%, rgba(var(--accent-rgb), 0.15), rgba(var(--accent-rgb), 0.05) 45%, transparent 70%)'
+              }} />
+              
+              {/* Icon with enhanced styling */}
+              <ChevronRight className={`relative z-10 w-6 h-6 transition-all duration-300 ${
+                canScrollRight 
+                  ? 'text-white/80 group-hover:text-accent group-hover:scale-110' 
+                  : 'text-white/40'
+              }`} />
+              
+              {/* Subtle ring effect on hover */}
+              <div className={`absolute inset-0 rounded-2xl transition-all duration-300 ${
+                canScrollRight ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+              }`} style={{
+                boxShadow: '0 0 0 1px rgba(var(--accent-rgb), 0.3)',
+                filter: 'blur(1px)'
+              }} />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 const LinkIcon = ({ href, label }) => (
   <a className="link" href={href} target="_blank" rel="noreferrer">
@@ -578,7 +798,7 @@ const Skills = () => {
   ]
 
   return (
-    <section id="skills" className="section py-14 sm:py-20">
+    <section id="skills" className="section py-14 sm:py-20 scroll-mt-20">
       <SectionTitle icon={Cpu} title="Skills" subtitle="Technologies & expertise" />
       
       <div className="grid md:grid-cols-3 gap-6">
@@ -638,7 +858,7 @@ const Skills = () => {
 }
 
 const Education = () => (
-  <section id="education" className="section py-14 sm:py-20">
+  <section id="education" className="section py-14 sm:py-20 scroll-mt-20">
     <SectionTitle icon={GraduationCap} title="Education" />
     <div className="grid md:grid-cols-2 gap-5">
       {education.map((ed, idx) => (
@@ -656,86 +876,94 @@ const Education = () => (
 
 
 const Experience = () => (
-  <section id="experience" className="section py-14 sm:py-20">
+  <section id="experience" className="section py-14 sm:py-20 scroll-mt-20">
     <SectionTitle icon={Briefcase} title="Experience" />
-    <div className="grid md:grid-cols-2 gap-5">
+    <HorizontalScrollContainer>
       {experience.map((job, idx) => (
-        <Card key={idx}>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h3 className="font-semibold">{job.title} — <span style={{ color: 'var(--accent)' }}>{job.company}</span></h3>
-              <p className="text-sm text-white/60">{job.location} • {job.date}</p>
+        <div key={idx} className="flex-shrink-0 w-80">
+          <Card>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="font-semibold">{job.title} — <span style={{ color: 'var(--accent)' }}>{job.company}</span></h3>
+                <p className="text-sm text-white/60">{job.location} • {job.date}</p>
+              </div>
             </div>
-          </div>
-          <ul className="mt-3 list-disc list-inside space-y-1 text-white/90">
-            {job.bullets.map((b, i) => <li key={i}>{b}</li>)}
-          </ul>
-          {job.links?.length ? (
-            <div className="mt-3 flex flex-wrap gap-3">
-              {job.links.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
-            </div>
-          ) : null}
-        </Card>
+            <ul className="mt-3 list-disc list-inside space-y-1 text-white/90">
+              {job.bullets.map((b, i) => <li key={i}>{b}</li>)}
+            </ul>
+            {job.links?.length ? (
+              <div className="mt-3 flex flex-wrap gap-3">
+                {job.links.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+              </div>
+            ) : null}
+          </Card>
+        </div>
       ))}
-    </div>
+    </HorizontalScrollContainer>
   </section>
 )
 
 const Projects = () => (
-  <section id="projects" className="section py-14 sm:py-20">
+  <section id="projects" className="section py-14 sm:py-20 scroll-mt-20">
     <SectionTitle icon={Cpu} title="Projects" subtitle="Selected work" />
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <HorizontalScrollContainer>
       {projects.map((p, idx) => (
-        <Card key={idx}>
-          <h3 className="font-semibold">{p.name}</h3>
-          <p className="text-sm text-white/60">{p.date}</p>
-          <p className="mt-2 text-white/90">{p.desc}</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {p.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
-          </div>
-        </Card>
+        <div key={idx} className="flex-shrink-0 w-80">
+          <Card>
+            <h3 className="font-semibold">{p.name}</h3>
+            <p className="text-sm text-white/60">{p.date}</p>
+            <p className="mt-2 text-white/90">{p.desc}</p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              {p.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+            </div>
+          </Card>
+        </div>
       ))}
-    </div>
+    </HorizontalScrollContainer>
   </section>
 )
 
 const Publications = () => (
-  <section id="publications" className="section py-14 sm:py-20">
+  <section id="publications" className="section py-14 sm:py-20 scroll-mt-20">
     <SectionTitle icon={BookOpen} title="Publications" />
-    <div className="grid md:grid-cols-2 gap-5">
+    <HorizontalScrollContainer>
       {publications.map((pub, idx) => (
-        <Card key={idx}>
-          <h3 className="font-semibold">{pub.title}</h3>
-          <p className="text-sm text-white/60">{pub.venue}</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {pub.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
-          </div>
-        </Card>
+        <div key={idx} className="flex-shrink-0 w-80">
+          <Card>
+            <h3 className="font-semibold">{pub.title}</h3>
+            <p className="text-sm text-white/60">{pub.venue}</p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              {pub.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+            </div>
+          </Card>
+        </div>
       ))}
-    </div>
+    </HorizontalScrollContainer>
   </section>
 )
 
 const ArticlesBlog = () => (
-  <section id="articles" className="section py-14 sm:py-20">
+  <section id="articles" className="section py-14 sm:py-20 scroll-mt-20">
     <SectionTitle icon={BookOpen} title="Articles" />
-    <div className="grid md:grid-cols-2 gap-5">
+    <HorizontalScrollContainer>
       {articles.map((article, idx) => (
-        <Card key={idx}>
-          <h3 className="font-semibold">{article.title}</h3>
-          <p className="text-sm text-white/60">{article.publisher}</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {article.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
-          </div>
-        </Card>
+        <div key={idx} className="flex-shrink-0 w-80">
+          <Card>
+            <h3 className="font-semibold">{article.title}</h3>
+            <p className="text-sm text-white/60">{article.publisher}</p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              {article.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+            </div>
+          </Card>
+        </div>
       ))}
-    </div>
+    </HorizontalScrollContainer>
   </section>
 )
 
 const ContactShowcase = () => {
   return (
-    <section id="contact" className="relative scroll-mt-24">
+    <section id="contact" className="relative scroll-mt-20">
       {/* soft gradient glow */}
       <div
         aria-hidden
@@ -953,7 +1181,7 @@ const ContactShowcase = () => {
 
 
 const Footer = () => (
-  <footer id="footer" className="section py-12 border-t border-white/10" style={{ scrollMarginTop: 'var(--header-h, 80px)' }}>
+  <footer id="footer" className="section py-12 border-t border-white/10 scroll-mt-20">
     <div className="flex justify-center">
       <div className="text-white/60 text-sm">
         <p>© {new Date().getFullYear()} {profile.name}. All rights reserved.</p>
