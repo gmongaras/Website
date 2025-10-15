@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "update-youtube": "python scripts/GetYoutueData.py && node scripts/updateData.js",
+    "prebuild": "npm run update-youtube"
   },
   "dependencies": {
     "@icons-pack/react-simple-icons": "^13.8.0",

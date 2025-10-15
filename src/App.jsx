@@ -1,8 +1,8 @@
-import { useMemo, useState, useEffect, useRef } from "react"
+import { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
 import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { SiHuggingface } from "react-icons/si"
-import { profile, education, skills, experience, projects, publications, articles, NeedleInAHaystackNote } from "./data"
+import { profile, education, skills, experience, projects, publications, articles, youtubeVideos, NeedleInAHaystackNote } from "./data"
 import GraphBackground from "./GraphBackground"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -60,7 +60,7 @@ const TypingAnimation = () => {
 }
 
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
-  <div className="flex items-end justify-between mb-6">
+  <div className="flex items-center justify-between mb-6">
     <div className="flex items-center gap-3">
       <div className="p-2 rounded-xl bg-accent/30 border border-accent/40">
         <Icon className="w-5 h-5" />
@@ -104,9 +104,9 @@ const CopyButton = ({
 
 const Chip = ({ children }) => <span className="chip">{children}</span>
 
-const Card = ({ children }) => <div className="card p-5">{children}</div>
+const Card = ({ children }) => <div className="card p-5 h-full w-full flex flex-col">{children}</div>
 
-const HorizontalScrollContainer = ({ children, className = "" }) => {
+const HorizontalScrollContainer = forwardRef(({ children, className = "" }, ref) => {
   const scrollRef = useRef(null)
   const scrollBarRef = useRef(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -114,6 +114,20 @@ const HorizontalScrollContainer = ({ children, className = "" }) => {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [hasOverflow, setHasOverflow] = useState(false)
+
+  // Expose scroll methods to parent component
+  useImperativeHandle(ref, () => ({
+    scrollTo: (options) => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo(options)
+      }
+    },
+    scrollLeft: () => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollLeft = 0
+      }
+    }
+  }))
 
   const updateScrollState = () => {
     if (!scrollRef.current) return
@@ -136,13 +150,29 @@ const HorizontalScrollContainer = ({ children, className = "" }) => {
 
   const scrollLeft = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' })
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+      const maxScrollLeft = scrollWidth - clientWidth
+      
+      // If we're close to the beginning, scroll to the very beginning
+      if (scrollLeft <= 300) {
+        scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' })
+      } else {
+        scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' })
+      }
     }
   }
 
   const scrollRight = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' })
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+      const maxScrollLeft = scrollWidth - clientWidth
+      
+      // If we're close to the end, scroll to the very end
+      if (scrollLeft >= maxScrollLeft - 300) {
+        scrollRef.current.scrollTo({ left: maxScrollLeft, behavior: 'smooth' })
+      } else {
+        scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' })
+      }
     }
   }
 
@@ -196,11 +226,25 @@ const HorizontalScrollContainer = ({ children, className = "" }) => {
 
   return (
     <div className={`relative ${className}`}>
+      {/* Left fade overlay */}
+      <div 
+        className={`absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
+          canScrollLeft ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      
+      {/* Right fade overlay */}
+      <div 
+        className={`absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
+          canScrollRight ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
       {/* Scrollable content */}
       <div
         ref={scrollRef}
         onScroll={updateScrollState}
-        className="flex gap-5 overflow-x-hidden scrollbar-hide"
+        className="flex gap-5 overflow-x-hidden scrollbar-hide items-stretch"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {children}
@@ -324,7 +368,7 @@ const HorizontalScrollContainer = ({ children, className = "" }) => {
       )}
     </div>
   )
-}
+})
 
 const LinkIcon = ({ href, label }) => (
   <a className="link" href={href} target="_blank" rel="noreferrer">
@@ -399,7 +443,7 @@ const Header = ({ onMobileMenuToggle }) => {
     { href: "#experience", label: "Experience", icon: Briefcase },
     { href: "#projects", label: "Projects", icon: Cpu },
     { href: "#publications", label: "Publications", icon: BookOpen },
-    { href: "#articles", label: "Articles", icon: BookOpen },
+    { href: "#media", label: "Media", icon: BookOpen },
   ]
 
   return (
@@ -875,12 +919,57 @@ const Education = () => (
 )
 
 
-const Experience = () => (
-  <section id="experience" className="section py-14 sm:py-20 scroll-mt-20">
-    <SectionTitle icon={Briefcase} title="Experience" />
-    <HorizontalScrollContainer>
+const Experience = () => {
+  // Calculate total years of experience
+  const calculateTotalExperience = () => {
+    const currentDate = new Date()
+    let totalMonths = 0
+    
+    experience.forEach(job => {
+      const dateRange = job.date
+      
+      if (dateRange.includes("Present")) {
+        // Current job - calculate from start date to now
+        const startMatch = dateRange.match(/(\w{3})\s+(\d{4})/)
+        if (startMatch) {
+          const startMonth = new Date(`${startMatch[1]} 1, ${startMatch[2]}`)
+          const monthsDiff = (currentDate.getFullYear() - startMonth.getFullYear()) * 12 + 
+                           (currentDate.getMonth() - startMonth.getMonth())
+          totalMonths += monthsDiff
+        }
+      } else {
+        // Past job - calculate duration
+        const dateMatch = dateRange.match(/(\w{3})\s+(\d{4})\s*—\s*(\w{3})\s+(\d{4})/)
+        if (dateMatch) {
+          const startDate = new Date(`${dateMatch[1]} 1, ${dateMatch[2]}`)
+          const endDate = new Date(`${dateMatch[3]} 1, ${dateMatch[4]}`)
+          const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                           (endDate.getMonth() - startDate.getMonth())
+          totalMonths += monthsDiff
+        }
+      }
+    })
+    
+    const years = Math.floor(totalMonths / 12)
+    const months = totalMonths % 12
+    
+    if (years === 0) {
+      return `${months} month${months !== 1 ? 's' : ''}`
+    } else if (months === 0) {
+      return `${years} year${years !== 1 ? 's' : ''}`
+    } else {
+      return `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`
+    }
+  }
+
+  const totalExperience = calculateTotalExperience()
+
+  return (
+    <section id="experience" className="section py-14 sm:py-20 scroll-mt-20">
+      <SectionTitle icon={Briefcase} title={`Experience (${totalExperience} Total Professional Experience)`} />
+      <HorizontalScrollContainer>
       {experience.map((job, idx) => (
-        <div key={idx} className="flex-shrink-0 w-80">
+        <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
           <Card>
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -901,18 +990,21 @@ const Experience = () => (
       ))}
     </HorizontalScrollContainer>
   </section>
-)
+  )
+}
 
 const Projects = () => (
   <section id="projects" className="section py-14 sm:py-20 scroll-mt-20">
     <SectionTitle icon={Cpu} title="Projects" subtitle="Selected work" />
     <HorizontalScrollContainer>
       {projects.map((p, idx) => (
-        <div key={idx} className="flex-shrink-0 w-80">
+        <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
           <Card>
-            <h3 className="font-semibold">{p.name}</h3>
-            <p className="text-sm text-white/60">{p.date}</p>
-            <p className="mt-2 text-white/90">{p.desc}</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold break-words">{p.name}</h3>
+              <p className="text-sm text-white/60">{p.date}</p>
+              <p className="mt-2 text-white/90 break-words">{p.desc}</p>
+            </div>
             <div className="mt-3 flex flex-wrap gap-3">
               {p.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
             </div>
@@ -928,10 +1020,12 @@ const Publications = () => (
     <SectionTitle icon={BookOpen} title="Publications" />
     <HorizontalScrollContainer>
       {publications.map((pub, idx) => (
-        <div key={idx} className="flex-shrink-0 w-80">
+        <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
           <Card>
-            <h3 className="font-semibold">{pub.title}</h3>
-            <p className="text-sm text-white/60">{pub.venue}</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold break-words">{pub.title}</h3>
+              <p className="text-sm text-white/60">{pub.venue}</p>
+            </div>
             <div className="mt-3 flex flex-wrap gap-3">
               {pub.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
             </div>
@@ -942,24 +1036,246 @@ const Publications = () => (
   </section>
 )
 
-const ArticlesBlog = () => (
-  <section id="articles" className="section py-14 sm:py-20 scroll-mt-20">
-    <SectionTitle icon={BookOpen} title="Articles" />
-    <HorizontalScrollContainer>
-      {articles.map((article, idx) => (
-        <div key={idx} className="flex-shrink-0 w-80">
-          <Card>
-            <h3 className="font-semibold">{article.title}</h3>
-            <p className="text-sm text-white/60">{article.publisher}</p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {article.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+const Media = () => {
+  const [sortBy, setSortBy] = useState('time') // 'time', 'likes', 'views'
+  const [isSorting, setIsSorting] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+  const scrollContainerRef = useRef(null)
+
+  // Helper function to parse numeric values from formatted strings
+  const parseNumericValue = (value) => {
+    if (value === 'Unknown') return 0
+    // Handle K and M suffixes properly
+    if (value.includes('K')) {
+      const num = parseFloat(value.replace('K', ''))
+      return isNaN(num) ? 0 : num * 1000
+    } else if (value.includes('M')) {
+      const num = parseFloat(value.replace('M', ''))
+      return isNaN(num) ? 0 : num * 1000000
+    } else {
+      const num = parseFloat(value)
+      return isNaN(num) ? 0 : num
+    }
+  }
+
+  // Sort videos based on selected criteria
+  const sortedVideos = useMemo(() => {
+    const videos = [...youtubeVideos]
+    
+    switch (sortBy) {
+      case 'likes':
+        return videos.sort((a, b) => parseNumericValue(b.likes) - parseNumericValue(a.likes))
+      case 'views':
+        return videos.sort((a, b) => parseNumericValue(b.views) - parseNumericValue(a.views))
+      case 'time':
+      default:
+        return videos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+    }
+  }, [sortBy])
+
+  // Handle sort change with animation
+  const handleSortChange = (newSortBy) => {
+    if (newSortBy !== sortBy) {
+      setIsSorting(true)
+      setSortBy(newSortBy)
+      
+      // Reset scroll position to beginning
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' })
+      }
+      
+      // Reset animation state after a short delay
+      setTimeout(() => setIsSorting(false), 300)
+    }
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isDropdownOpen])
+
+  return (
+    <section id="media" className="section py-14 sm:py-20 scroll-mt-20">
+      <SectionTitle icon={BookOpen} title="Media" subtitle="Articles & Videos" />
+      
+      {/* YouTube Section */}
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
+              <FaYoutube className="w-4 h-4 text-white/70" />
             </div>
-          </Card>
+            <h3 className="text-lg font-medium text-white/80">YouTube</h3>
+          </div>
+          
+          {/* Custom Sort Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 hover:bg-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer flex items-center gap-2 min-w-[140px]"
+            >
+              <span>
+                {sortBy === 'time' ? 'Sort by Date' : 
+                 sortBy === 'likes' ? 'Sort by Likes' : 'Sort by Views'}
+              </span>
+              <svg 
+                className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-black/95 border border-white/10 rounded-lg shadow-xl z-50 backdrop-blur-sm">
+                <div className="py-1">
+                  {[
+                    { value: 'time', label: 'Sort by Date' },
+                    { value: 'likes', label: 'Sort by Likes' },
+                    { value: 'views', label: 'Sort by Views' }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        handleSortChange(option.value)
+                        setIsDropdownOpen(false)
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm transition-all duration-200 hover:bg-accent/20 hover:text-white ${
+                        sortBy === option.value 
+                          ? 'bg-accent/30 text-white border-l-4 border-accent shadow-lg shadow-accent/20' 
+                          : 'text-white/80'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      ))}
-    </HorizontalScrollContainer>
-  </section>
-)
+        <HorizontalScrollContainer ref={scrollContainerRef}>
+          <motion.div
+            className="flex gap-6"
+            animate={isSorting ? { opacity: 0.7, scale: 0.98 } : { opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {sortedVideos.map((video, idx) => (
+              <motion.div
+                key={`${video.videoId}-${sortBy}`}
+                className="flex-shrink-0 w-80 flex min-w-0 max-w-80"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.4, 
+                  delay: idx * 0.05,
+                  ease: "easeOut"
+                }}
+              >
+              <Card>
+                <div className="flex-1 min-w-0">
+                  <div className="relative group">
+                    <img
+                      src={video.thumbnail}
+                      alt={video.title}
+                      className="w-full h-48 object-cover rounded-lg mb-3"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/320x180/1a1a1a/ffffff?text=Video+Thumbnail'
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                      {video.duration}
+                    </div>
+                    <a
+                      href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg"
+                    >
+                      <FaYoutube className="w-12 h-12 text-red-500" />
+                    </a>
+                  </div>
+                  <h3 className="font-semibold mb-2">{video.title}</h3>
+                  <div className="flex items-center justify-between text-xs text-white/50 mb-2">
+                    <p>{video.publishedAt}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>{video.views}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                        </svg>
+                        <span>{video.likes}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn w-full flex items-center justify-center gap-2"
+                  >
+                    <FaYoutube className="w-4 h-4" />
+                    Watch on YouTube
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        </HorizontalScrollContainer>
+      </div>
+
+      {/* Articles Section */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
+            <BookOpen className="w-4 h-4 text-white/70" />
+          </div>
+          <h3 className="text-lg font-medium text-white/80">Articles</h3>
+        </div>
+        <HorizontalScrollContainer>
+          {articles.map((article, idx) => (
+            <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
+              <Card>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold break-words">{article.title}</h3>
+                  <p className="text-sm text-white/60">{article.publisher}</p>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {article.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+                </div>
+              </Card>
+            </div>
+          ))}
+        </HorizontalScrollContainer>
+      </div>
+    </section>
+  )
+}
 
 const ContactShowcase = () => {
   return (
@@ -1164,7 +1480,7 @@ const ContactShowcase = () => {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Open Hugging Face <ExternalLink className="w-4 h-4" />
+                    Open HF <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
               </Card>
@@ -1204,7 +1520,7 @@ export default function App() {
           <Experience />
           <Projects />
           <Publications />
-          <ArticlesBlog />
+          <Media />
           {/* <RandomCreations /> */}
           <ContactShowcase />
         </main>

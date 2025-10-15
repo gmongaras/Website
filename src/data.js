@@ -46,7 +46,7 @@ export const education = [
 
 export const skills = {
   coding: ["Python", "C++", "CUDA", "Rust", "Triton", "C", "JavaScript", "SQL", "PL/SQL", "AWS", "Linux", "Arduino", "ARM", "Android SDK", "Java", "Django", "Flask", "HTML", "CSS"],
-  ai: ["Neural Networks", "Generative Models", "PyTorch", "Machine Learning", "Reinforcement Leanring", "NumPy", "CNNs", "Transformers", "GANs", "Diffusion Models", "Object Detection", "Audio Processing", "Huggingface", "TensorFlow", "JAX", "OpenAI", "GPT", "LoRA", "finetuning", "pretraining", "LLMs", "inference"],
+  ai: ["Neural Networks", "Generative Models", "PyTorch", "Machine Learning", "Reinforcement Leanring", "NumPy", "CNNs", "Transformers", "GANs", "Diffusion Models", "Object Detection", "Audio Processing", "Huggingface", "TensorFlow", "JAX", "OpenAI", "GPT", "LoRA", "finetuning", "pretraining", "LLMs", "inference", "Claude", "Cursor", "Gemini"],
   other: ["AWS", "Cloud Platforms", "Quantum Computing", "Blockchain", "Agile", "Eagerness To Learn"]
 }
 
@@ -206,12 +206,15 @@ export const articles = [
   },
   {
     title: "Coding A Virtual AI Girlfriend",
-    venupublishere: "MLearning.ai",
+    publisher: "MLearning.ai",
     links: [
       { label: "Article", href: "https://medium.com/mlearning-ai/coding-a-virtual-ai-girlfriend-f951e648aa46" }
     ]
   },
 ]
+
+// Import YouTube videos from automatically generated file
+export { youtubeVideos } from './youtubeData.js';
 
 export const activitiesAwards = {
   activities: ["Artificial Intelligence Club (President)", "Cybersecurity Club", "Computer Science Club", "Commons Council"],
