@@ -153,11 +153,14 @@ const HorizontalScrollContainer = forwardRef(({ children, className = "" }, ref)
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
       const maxScrollLeft = scrollWidth - clientWidth
       
+      // Calculate card width: w-80 (320px) + gap-5 (20px) = 340px
+      const cardWidth = 340
+      
       // If we're close to the beginning, scroll to the very beginning
-      if (scrollLeft <= 300) {
+      if (scrollLeft <= cardWidth) {
         scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' })
       } else {
-        scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' })
+        scrollRef.current.scrollBy({ left: -cardWidth, behavior: 'smooth' })
       }
     }
   }
@@ -167,11 +170,14 @@ const HorizontalScrollContainer = forwardRef(({ children, className = "" }, ref)
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
       const maxScrollLeft = scrollWidth - clientWidth
       
+      // Calculate card width: w-80 (320px) + gap-5 (20px) = 340px
+      const cardWidth = 340
+      
       // If we're close to the end, scroll to the very end
-      if (scrollLeft >= maxScrollLeft - 300) {
+      if (scrollLeft >= maxScrollLeft - cardWidth) {
         scrollRef.current.scrollTo({ left: maxScrollLeft, behavior: 'smooth' })
       } else {
-        scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' })
+        scrollRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' })
       }
     }
   }
@@ -223,6 +229,7 @@ const HorizontalScrollContainer = forwardRef(({ children, className = "" }, ref)
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
   }
+
 
   return (
     <div className={`relative ${className}`}>
@@ -1074,7 +1081,7 @@ const Media = () => {
     }
   }, [sortBy])
 
-  // Handle sort change with animation
+  // Handle sort change with smooth animation
   const handleSortChange = (newSortBy) => {
     if (newSortBy !== sortBy) {
       setIsSorting(true)
@@ -1085,8 +1092,8 @@ const Media = () => {
         scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' })
       }
       
-      // Reset animation state after a short delay
-      setTimeout(() => setIsSorting(false), 300)
+      // Reset animation state after animation completes
+      setTimeout(() => setIsSorting(false), 600)
     }
   }
 
@@ -1106,6 +1113,25 @@ const Media = () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isDropdownOpen])
+
+  // Prevent page scrolling during animation
+  useEffect(() => {
+    const handleWheel = (event) => {
+      if (isSorting) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+
+    if (isSorting) {
+      document.addEventListener('wheel', handleWheel, { passive: false })
+    }
+
+    return () => {
+      document.removeEventListener('wheel', handleWheel)
+    }
+  }, [isSorting])
+
 
   return (
     <section id="media" className="section py-14 sm:py-20 scroll-mt-20">
@@ -1169,24 +1195,56 @@ const Media = () => {
             )}
           </div>
         </div>
-        <HorizontalScrollContainer ref={scrollContainerRef}>
-          <motion.div
-            className="flex gap-6"
-            animate={isSorting ? { opacity: 0.7, scale: 0.98 } : { opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          >
-            {sortedVideos.map((video, idx) => (
-              <motion.div
-                key={`${video.videoId}-${sortBy}`}
-                className="flex-shrink-0 w-80 flex min-w-0 max-w-80"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  duration: 0.4, 
-                  delay: idx * 0.05,
-                  ease: "easeOut"
-                }}
-              >
+        <div 
+          className="relative"
+          style={{ 
+            overflow: 'hidden',
+            minHeight: '420px', // Increased height to accommodate hover scaling
+            padding: '10px 0' // Add vertical padding to accommodate hover scaling
+          }}
+        >
+          <HorizontalScrollContainer ref={scrollContainerRef}>
+            <motion.div 
+              className="flex gap-6"
+              initial={false}
+              animate={{ 
+                opacity: isSorting ? 0.3 : 1,
+                scale: isSorting ? 0.95 : 1
+              }}
+              transition={{ 
+                duration: 0.3, 
+                ease: "easeInOut" 
+              }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={sortBy}
+                  className="flex gap-6"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ 
+                    duration: 0.4, 
+                    ease: "easeOut" 
+                  }}
+                >
+                  {sortedVideos.map((video, idx) => (
+                    <motion.div
+                      key={`${video.videoId}-${sortBy}`}
+                      className="flex-shrink-0 w-80 flex min-w-0 max-w-80"
+                      style={{ margin: '5px 0' }} // Add vertical margin for hover scaling
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ 
+                        duration: 0.3, 
+                        delay: idx * 0.05,
+                        ease: "easeOut" 
+                      }}
+                      whileHover={{ 
+                        scale: 1.02,
+                        transition: { duration: 0.2 }
+                      }}
+                    >
               <Card>
                 <div className="flex-1 min-w-0">
                   <div className="relative group">
@@ -1242,11 +1300,14 @@ const Media = () => {
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
-              </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </HorizontalScrollContainer>
+                    </Card>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+          </HorizontalScrollContainer>
+        </div>
       </div>
 
       {/* Articles Section */}
