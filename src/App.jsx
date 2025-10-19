@@ -1282,34 +1282,11 @@ const LazyImage = ({ src, alt, className, onError, ...props }) => {
 }
 
 const ImageRenderer = ({ alt, src, caption }) => {
-  // Convert relative paths to absolute paths for deployed site
-  const getAbsoluteImagePath = (imageSrc) => {
-    // If it's already an absolute URL, return as is
-    if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
-      return imageSrc
-    }
-    
-    // If it's a relative path starting with src/, convert to absolute path
-    if (imageSrc.startsWith('src/')) {
-      return `/${imageSrc}`
-    }
-    
-    // If it's already an absolute path starting with /, return as is
-    if (imageSrc.startsWith('/')) {
-      return imageSrc
-    }
-    
-    // Otherwise, assume it's relative and prepend /
-    return `/${imageSrc}`
-  }
-
-  const absoluteSrc = getAbsoluteImagePath(src)
-
   return (
     <div className="mb-4 my-4 text-center">
       <div className="group relative inline-block overflow-visible rounded-lg p-2">
         <LazyImage 
-          src={absoluteSrc} 
+          src={src} 
           alt={alt} 
           className="max-w-full h-auto rounded-lg mx-auto shadow-lg transition-transform duration-300 ease-out group-hover:scale-105" 
         />

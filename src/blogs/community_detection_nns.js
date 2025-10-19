@@ -23,7 +23,7 @@ Community detection is when one is given an unweighted, undirected graph and is 
 
 For example, take a look at the graph below:
 
-![Alt text](src/blogs/images/community_detection_nns/comm_detection.webp "https://towardsdatascience.com/community-detection-algorithms-9bd8951e7dae")
+![Alt text](/blogs/images/community_detection_nns/comm_detection.webp "https://towardsdatascience.com/community-detection-algorithms-9bd8951e7dae")
 
 In this graph, you can see that the nodes are labeled by color signifying the community they belong to. Looking between the communities, we can see that there are usually few edges between those communities, but this isn't always the case.
 
@@ -35,7 +35,7 @@ Before using a neural network to make predictions on communities, we first have 
 
 A single value in the modularity matrix is found with the following formula:
 
-![B formula](src/blogs/images/community_detection_nns/b_formula.webp "B value formula")
+![B formula](/blogs/images/community_detection_nns/b_formula.webp "B value formula")
 
 - $a_{ij}$ = The probability that $i$ and $j$ are connected. This value can be represented as a 1 if $i$ and $j$ are connected via an edge and 0 if $i$ and $j$ are not connected. If $i$ is the same node as $j$, then the value is 0.
 - $k_i$ = The degree or number of neighbors of node $i$
@@ -46,19 +46,19 @@ To form the matrix, $B_{ij}$ is produced for all $i$ and $j$ node combinations. 
 
 Below is a graph with 7 nodes and 9 edges which will be used as an example to calculate the $B$ matrix:
 
-![Undirected graph with 7 nodes and 9 edges](src/blogs/images/community_detection_nns/undir_graph.webp "Undirected graph with 7 nodes and 9 edges")
+![Undirected graph with 7 nodes and 9 edges](/blogs/images/community_detection_nns/undir_graph.webp "Undirected graph with 7 nodes and 9 edges")
 
 To start, we will first compute $B_{ij}$ when $i$ is node $A$ and $j$ is also node $A$:
 
-![B value computation when i = A and j = A](src/blogs/images/community_detection_nns/b_comp.webp "B value computation when i = A and j = A")
+![B value computation when i = A and j = A](/blogs/images/community_detection_nns/b_comp.webp "B value computation when i = A and j = A")
 
 So, in the graph, when $i$ and $j$ are both $A$, the $B_{ij}$ value is -0.22. Below is another calculation, but using $i$ is equal to $A$ and $j$ is equal to $B$:
 
-![B value computation when i = A and j = B](src/blogs/images/community_detection_nns/5.webp "B value computation when i = A and j = B")
+![B value computation when i = A and j = B](/blogs/images/community_detection_nns/5.webp "B value computation when i = A and j = B")
 
 Performing this calculation on all $ij$ pairs, we get the following matrix:
 
-![Complete B matrix](src/blogs/images/community_detection_nns/6.webp "Complete B matrix")
+![Complete B matrix](/blogs/images/community_detection_nns/6.webp "Complete B matrix")
 
 Now we have an encoded version of the graph which can be fed into the neural network.
 
@@ -70,7 +70,7 @@ $[-0.222, 0.667, 0.779, -0.444, -0.222, -0.333, -0.222]$
 
 Below is the model we are going to use:
 
-![Neural Network Model Structure](src/blogs/images/community_detection_nns/7.webp "Neural Network Model Structure")
+![Neural Network Model Structure](/blogs/images/community_detection_nns/7.webp "Neural Network Model Structure")
 
 - $B$ = The encoded form of the graph. This matrix has dimensions $N$ x $N$
 - $H$ = An encoded form of the $B$ matrix. This matrix has dimensions $d$ x $N$
@@ -103,7 +103,7 @@ So, now that we have the training data, we can train the model just like a norma
 
 As stated earlier, we don't actually care about the $M$ matrix, which is the final output of the model. The $M$ matrix is just used so that the model can learn a good representation for the $H$ matrix. Instead, we care about the $H$ matrix. Let's look at the model one more time:
 
-![Neural Network Model Structure](src/blogs/images/community_detection_nns/7.webp "Neural Network Model Structure")
+![Neural Network Model Structure](/blogs/images/community_detection_nns/7.webp "Neural Network Model Structure")
 
 The $H$ matrix is some encoded form of the original *B* matrix graph encoding. Since this encoding needs to be decoded to the original $B$ matrix, the encoder will have to learn the best encodings for each node in the graph in order to give the decoder the easiest time when decoding the matrix. So, the $H$ matrix will be a really good representation of the initial $B$ matrix, meaning the $H$ matrix will be a really good encoding of the graph.
 
@@ -117,11 +117,11 @@ To find the communities in the latent space, an algorithm called $k$-means clust
 
 [***k*-means**](https://towardsdatascience.com/understanding-k-means-clustering-in-machine-learning-6a6e67336aa1) clustering is an algorithm that splits the data into $k$ groups based on how similar points are in the latent space. As an example, let's perform *k*-means clustering on the following graph:
 
-![alt text](src/blogs/images/community_detection_nns/8.webp "https://www.analyticsvidhya.com/blog/2021/04/k-means-clustering-simplified-in-python/")
+![alt text](/blogs/images/community_detection_nns/8.webp "https://www.analyticsvidhya.com/blog/2021/04/k-means-clustering-simplified-in-python/")
 
 Let's let $k$ be equal to 3. So, we want to cluster the data into three distinct groups based on how related the nodes are to each other.
 
-![alt text](src/blogs/images/community_detection_nns/9.webp "https://www.analyticsvidhya.com/blog/2021/04/k-means-clustering-simplified-in-python/")
+![alt text](/blogs/images/community_detection_nns/9.webp "https://www.analyticsvidhya.com/blog/2021/04/k-means-clustering-simplified-in-python/")
 
 Clearly, the groups above are the correct clusters since each point in the cluster is closer to the center of that cluster rather than it being closer to another center of another cluster. This is the basic idea of the *k*-means clustering algorithm.
 
@@ -135,19 +135,19 @@ Let's see how the Neural Network model performed against the Girvan Newman algor
 
 To start, we generated 10 datasets with different average amounts of in-degree and out-degree counts. An in-degree of a node is the number of edges that connect to nodes in the same community while and out-degree is the number of edges that connect to nodes in a different community. So, if the out-degree count is higher, it will be harder to determine the proper communities of each node. Below is information on the 10 generated datasets:
 
-![Test Dataset Statistics](src/blogs/images/community_detection_nns/10.webp "Test Dataset Statistics")
+![Test Dataset Statistics](/blogs/images/community_detection_nns/10.webp "Test Dataset Statistics")
 
 Additionally, we also trained 11 different neural network models to test against the Girvan Newman algorithm. Below are the algorithms used where the first is Girvan Newman using an 80% subset and the others are the number of nodes in each layer in the neural network:
 
-![Algorithms Being Tested](src/blogs/images/community_detection_nns/11.webp "Algorithms Being Tested")
+![Algorithms Being Tested](/blogs/images/community_detection_nns/11.webp "Algorithms Being Tested")
 
 We trained each neural network model for 1000 epochs on 1000 $B$ matrices (numpy arrays) which can be found in the GitHub repo linked above. Below are the results for the average accuracy of each model:
 
-![Algorithm Average Accuracy On All Datasets](src/blogs/images/community_detection_nns/12.webp "Algorithm Average Accuracy On All Datasets")
+![Algorithm Average Accuracy On All Datasets](/blogs/images/community_detection_nns/12.webp "Algorithm Average Accuracy On All Datasets")
 
 It looks like the neural network models tend to outperform the Girvan Newman algorithm by up to 20%. If you are interested in all the data, below is a graph showing the results for all dataset tests:
 
-![Algorithm Accuracy On Each Dataset](src/blogs/images/community_detection_nns/13.webp "Algorithm Accuracy On Each Dataset")
+![Algorithm Accuracy On Each Dataset](/blogs/images/community_detection_nns/13.webp "Algorithm Accuracy On Each Dataset")
 
 Additionally, the Girvan Newman took around 40 seconds to run while the neural network took around 2 seconds to run on my laptop. So, it looks like the neural network model is clearly the better choice when picking between the Girvan Newman model or the Neural Network model.
 
