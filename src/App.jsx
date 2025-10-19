@@ -1,10 +1,13 @@
-import { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
+import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
 import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { SiHuggingface } from "react-icons/si"
 import { profile, education, skills, experience, projects, publications, articles, youtubeVideos, NeedleInAHaystackNote } from "./data"
+import { posts } from "./blogs"
 import GraphBackground from "./GraphBackground"
 import { motion, AnimatePresence } from "framer-motion"
+import 'katex/dist/katex.min.css'
+import katex from 'katex'
 
 
 const TypingAnimation = () => {
@@ -451,6 +454,7 @@ const Header = ({ onMobileMenuToggle }) => {
     { href: "#projects", label: "Projects", icon: Cpu },
     { href: "#publications", label: "Publications", icon: BookOpen },
     { href: "#media", label: "Media", icon: BookOpen },
+    { href: "#blogs", label: "Blogs", icon: BookAudio },
   ]
 
   return (
@@ -461,6 +465,7 @@ const Header = ({ onMobileMenuToggle }) => {
           <img
             src="/icon.png"
             alt="Icon"
+            loading="eager"
             className="h-10 w-10 md:h-16 md:w-16 rounded-md object-cover shadow-sm"
           />
         </a>
@@ -648,7 +653,7 @@ const ProfilePhoto = () => (
     <img
       src="/me.jpg"
       alt="Portrait of Gabriel Mongaras"
-      loading="lazy"
+      loading="eager"
       decoding="async"
       className="relative w-full aspect-square object-cover rounded-2xl ring-1 ring-white/10 shadow-2xl"
     />
@@ -1043,6 +1048,431 @@ const Publications = () => (
   </section>
 )
 
+// Token types for the parser
+const TOKEN_TYPES = {
+  HEADER_1: 'HEADER_1',
+  HEADER_2: 'HEADER_2', 
+  HEADER_3: 'HEADER_3',
+  LATEX_BLOCK: 'LATEX_BLOCK',
+  LATEX_INLINE: 'LATEX_INLINE',
+  ORDERED_LIST: 'ORDERED_LIST',
+  UNORDERED_LIST: 'UNORDERED_LIST',
+  IMAGE: 'IMAGE',
+  TEXT: 'TEXT'
+}
+
+// Tokenizer - converts markdown text into structured tokens
+const tokenizeContent = (text) => {
+  const tokens = []
+  const lines = text.split('\n')
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+    
+    // Headers
+    if (line.match(/^###\s+(.+)/)) {
+      tokens.push({ type: TOKEN_TYPES.HEADER_3, content: line.replace(/^###\s+/, '') })
+      // Skip any empty lines immediately after the header
+      i++
+      while (i < lines.length && !lines[i].trim()) {
+        i++
+      }
+      i-- // Back up one since we'll increment at end of loop
+    } else if (line.match(/^##\s+(.+)/)) {
+      tokens.push({ type: TOKEN_TYPES.HEADER_2, content: line.replace(/^##\s+/, '') })
+      // Skip any empty lines immediately after the header
+      i++
+      while (i < lines.length && !lines[i].trim()) {
+        i++
+      }
+      i-- // Back up one since we'll increment at end of loop
+    } else if (line.match(/^#\s+(.+)/)) {
+      tokens.push({ type: TOKEN_TYPES.HEADER_1, content: line.replace(/^#\s+/, '') })
+      // Skip any empty lines immediately after the header
+      i++
+      while (i < lines.length && !lines[i].trim()) {
+        i++
+      }
+      i-- // Back up one since we'll increment at end of loop
+    }
+    // Lists - collect multiple lines
+    else if (line.match(/^\d+\.\s+/)) {
+      const listItems = [line]
+      i++
+      while (i < lines.length && lines[i].match(/^\d+\.\s+/)) {
+        listItems.push(lines[i])
+        i++
+      }
+      i-- // Back up one since we'll increment at end of loop
+      tokens.push({ type: TOKEN_TYPES.ORDERED_LIST, content: listItems })
+    } else if (line.match(/^[-*]\s+/)) {
+      const listItems = [line]
+      i++
+      while (i < lines.length && lines[i].match(/^[-*]\s+/)) {
+        listItems.push(lines[i])
+        i++
+      }
+      i-- // Back up one since we'll increment at end of loop
+      tokens.push({ type: TOKEN_TYPES.UNORDERED_LIST, content: listItems })
+    }
+    // Images
+    else if (line.match(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/)) {
+      const match = line.match(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/)
+      tokens.push({ 
+        type: TOKEN_TYPES.IMAGE, 
+        content: { alt: match[1], src: match[2], caption: match[3] }
+      })
+      
+      // Skip any empty lines immediately after the image
+      i++
+      while (i < lines.length && !lines[i].trim()) {
+        i++
+      }
+      i-- // Back up one since we'll increment at end of loop
+    }
+    // Regular text
+    else if (line.trim()) {
+      tokens.push({ type: TOKEN_TYPES.TEXT, content: line })
+    } else {
+      // Empty line - only add if it's not immediately after an image or header
+      const prevToken = tokens[tokens.length - 1]
+      if (!prevToken || (prevToken.type !== TOKEN_TYPES.IMAGE && 
+          prevToken.type !== TOKEN_TYPES.HEADER_1 && 
+          prevToken.type !== TOKEN_TYPES.HEADER_2 && 
+          prevToken.type !== TOKEN_TYPES.HEADER_3)) {
+        tokens.push({ type: TOKEN_TYPES.TEXT, content: '' })
+      }
+    }
+    
+    i++
+  }
+  
+  return tokens
+}
+
+// Individual renderer components
+const HeaderRenderer = ({ level, content }) => {
+  const classes = {
+    1: "text-3xl font-bold mt-8 mb-6 text-white",
+    2: "text-2xl font-bold mt-8 mb-4 text-white", 
+    3: "text-xl font-bold mt-8 mb-4 text-white"
+  }
+  
+  const Tag = `h${level}`
+  return <Tag className={classes[level]}>{content}</Tag>
+}
+
+const LaTeXRenderer = ({ content, displayMode = false }) => {
+  try {
+    const rendered = katex.renderToString(content, { displayMode })
+    return (
+      <div 
+        dangerouslySetInnerHTML={{ __html: rendered }}
+        className={displayMode ? "my-6 text-center" : ""}
+      />
+    )
+  } catch (error) {
+    console.error('LaTeX rendering error:', error)
+    return (
+      <span className={displayMode ? "my-6 text-center text-red-400" : "text-red-400"}>
+        LaTeX Error: {content}
+      </span>
+    )
+  }
+}
+
+const ListRenderer = ({ items, ordered = false }) => {
+  const listClass = ordered 
+    ? "list-decimal list-outside mb-4 space-y-1 ml-6"
+    : "list-disc list-outside mb-4 space-y-1 ml-6"
+  
+  const processListItem = (item) => {
+    const content = item.replace(/^[-*]\s+|^\d+\.\s+/, '')
+    
+    // Process inline formatting and LaTeX
+    const processedContent = content
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 py-0.5 rounded text-sm">$1</code>')
+      // Process LaTeX inline
+      .replace(/\$([^$]+)\$/g, (match, latex) => {
+        try {
+          return katex.renderToString(latex, { displayMode: false })
+        } catch (error) {
+          return `<span class="text-red-400">LaTeX Error: ${latex}</span>`
+        }
+      })
+      // Process LaTeX blocks
+      .replace(/\$\$([^$]+)\$\$/g, (match, latex) => {
+        try {
+          const rendered = katex.renderToString(latex, { displayMode: true })
+          return `<div class="my-6 text-center">${rendered}</div>`
+        } catch (error) {
+          return `<div class="my-6 text-center text-red-400">LaTeX Error: ${latex}</div>`
+        }
+      })
+      .replace(/\n\n+/g, '<br><br>')
+      .replace(/\n/g, '<br>')
+    
+    return processedContent
+  }
+  
+  return (
+    <ol className={listClass}>
+      {items.map((item, index) => (
+        <li key={index} className="mb-1 pl-2">
+          <div 
+            dangerouslySetInnerHTML={{ __html: processListItem(item) }}
+            style={{ display: 'contents' }}
+          />
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+// LazyImage component with intersection observer
+const LazyImage = ({ src, alt, className, onError, ...props }) => {
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [isInView, setIsInView] = useState(false)
+  const imgRef = useRef(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true)
+          observer.disconnect()
+        }
+      },
+      {
+        rootMargin: '50px', // Start loading 50px before the image comes into view
+        threshold: 0.1
+      }
+    )
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={imgRef} className={className}>
+      {isInView && (
+        <img
+          src={src}
+          alt={alt}
+          onLoad={() => setIsLoaded(true)}
+          onError={onError}
+          className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          {...props}
+        />
+      )}
+      {!isLoaded && isInView && (
+        <div className="absolute inset-0 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const ImageRenderer = ({ alt, src, caption }) => {
+  return (
+    <div className="mb-4 my-4 text-center">
+      <div className="group relative inline-block overflow-visible rounded-lg p-2">
+        <LazyImage 
+          src={src} 
+          alt={alt} 
+          className="max-w-full h-auto rounded-lg mx-auto shadow-lg transition-transform duration-300 ease-out group-hover:scale-105" 
+        />
+      </div>
+      {caption && (
+        <p className="text-sm text-white/60 text-center mt-2 italic">
+          {caption}
+        </p>
+      )}
+    </div>
+  )
+}
+
+const TextRenderer = ({ content }) => {
+  // No content is replaced with a line break. Note that I want it to be slightly smaller so I
+  // use a paragraph with no text and some padding
+  // if (!content.trim()) return <br />
+  if (!content.trim()) return <p class="mb-4"></p>
+  
+  // Process inline formatting
+  const processedContent = content
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 py-0.5 rounded text-sm">$1</code>')
+    // Process LaTeX inline
+    .replace(/\$([^$]+)\$/g, (match, latex) => {
+      try {
+        return katex.renderToString(latex, { displayMode: false })
+      } catch (error) {
+        return `<span class="text-red-400">LaTeX Error: ${latex}</span>`
+      }
+    })
+    // Process LaTeX blocks
+    .replace(/\$\$([^$]+)\$\$/g, (match, latex) => {
+      try {
+        const rendered = katex.renderToString(latex, { displayMode: true })
+        return `<div class="my-6 text-center">${rendered}</div>`
+      } catch (error) {
+        return `<div class="my-6 text-center text-red-400">LaTeX Error: ${latex}</div>`
+      }
+    })
+    // Handle double newlines as paragraph breaks with more spacing
+    .replace(/\n\n+/g, '')
+    // Handle single newlines as line breaks
+    .replace(/\n/g, '')
+  
+  return (
+    <div 
+      dangerouslySetInnerHTML={{ __html: processedContent }}
+      style={{ display: 'contents' }}
+    />
+  )
+}
+
+// Main content renderer with memoization
+const ContentRenderer = React.memo(({ content }) => {
+  const tokens = React.useMemo(() => tokenizeContent(content), [content])
+  
+  return (
+    <div>
+      {tokens.map((token, index) => {
+        switch (token.type) {
+          case TOKEN_TYPES.HEADER_1:
+            return <HeaderRenderer key={index} level={1} content={token.content} />
+          case TOKEN_TYPES.HEADER_2:
+            return <HeaderRenderer key={index} level={2} content={token.content} />
+          case TOKEN_TYPES.HEADER_3:
+            return <HeaderRenderer key={index} level={3} content={token.content} />
+          case TOKEN_TYPES.ORDERED_LIST:
+            return <ListRenderer key={index} items={token.content} ordered={true} />
+          case TOKEN_TYPES.UNORDERED_LIST:
+            return <ListRenderer key={index} items={token.content} ordered={false} />
+          case TOKEN_TYPES.IMAGE:
+            return (
+              <ImageRenderer 
+                key={index} 
+                alt={token.content.alt} 
+                src={token.content.src} 
+                caption={token.content.caption} 
+              />
+            )
+          case TOKEN_TYPES.TEXT:
+            return <TextRenderer key={index} content={token.content} />
+          default:
+            return null
+        }
+      })}
+    </div>
+  )
+})
+
+// Main LaTeX renderer component
+const LatexRenderer = ({ content }) => {
+  return <ContentRenderer content={content} />
+}
+
+const BlogPost = ({ post }) => {
+  if (!post) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold mb-4">Blog Post Not Found</h1>
+          <a href="/" className="btn">Back to Home</a>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <div className="section py-16 sm:py-24">
+        <div className="max-w-4xl mx-auto">
+          {/* Back button */}
+          <a 
+            href="/#blogs" 
+            className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Blogs
+          </a>
+
+          {/* Blog post content */}
+          <article className="prose prose-invert max-w-none">
+            <header className="mb-8">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-4">{post.title}</h1>
+              <div className="flex items-center gap-4 text-sm text-white/60 mb-6">
+                <time>{new Date(post.date).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</time>
+                <div className="flex gap-2">
+                  {post.tags.map((tag, i) => (
+                    <span key={i} className="chip text-xs">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            </header>
+
+            <div className="prose prose-invert max-w-none">
+              <LatexRenderer content={post.body} />
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const Blogs = () => {
+  return (
+    <section id="blogs" className="section py-14 sm:py-20 scroll-mt-20">
+      <SectionTitle icon={BookAudio} title="Blogs" subtitle="Thoughts & insights" />
+      <HorizontalScrollContainer>
+        {posts.map((post, idx) => (
+          <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
+            <Card>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold break-words">{post.title}</h3>
+                <p className="text-sm text-white/60 mt-1">{post.date}</p>
+                <p className="mt-3 text-white/90 break-words">{post.excerpt}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {post.tags.map((tag, i) => (
+                    <span key={i} className="chip text-xs">{tag}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-4">
+                <a 
+                  href={`#blog/${post.slug}`}
+                  className="btn w-full flex items-center justify-center gap-2"
+                >
+                  Read More
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            </Card>
+          </div>
+        ))}
+      </HorizontalScrollContainer>
+    </section>
+  )
+}
+
 const Media = () => {
   const [sortBy, setSortBy] = useState('time') // 'time', 'likes', 'views'
   const [isSorting, setIsSorting] = useState(false)
@@ -1248,7 +1678,7 @@ const Media = () => {
               <Card>
                 <div className="flex-1 min-w-0">
                   <div className="relative group">
-                    <img
+                    <LazyImage
                       src={video.thumbnail}
                       alt={video.title}
                       className="w-full h-48 object-cover rounded-lg mb-3"
@@ -1569,7 +1999,43 @@ const Footer = () => (
 
 export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [currentView, setCurrentView] = useState('home')
+  const [currentPost, setCurrentPost] = useState(null)
 
+  // Handle hash-based routing for blog posts
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash
+      if (hash.startsWith('#blog/')) {
+        const slug = hash.replace('#blog/', '')
+        const post = posts.find(p => p.slug === slug)
+        if (post) {
+          setCurrentPost(post)
+          setCurrentView('blog')
+        } else {
+          setCurrentView('home')
+          setCurrentPost(null)
+        }
+      } else {
+        setCurrentView('home')
+        setCurrentPost(null)
+      }
+    }
+
+    // Check initial hash
+    handleHashChange()
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  // If viewing a blog post, render the blog post component
+  if (currentView === 'blog') {
+    return <BlogPost post={currentPost} />
+  }
+
+  // Otherwise render the main homepage
   return (
     <div className="min-h-screen flex flex-col">
       <Header onMobileMenuToggle={setIsMobileMenuOpen} />
@@ -1582,6 +2048,7 @@ export default function App() {
           <Projects />
           <Publications />
           <Media />
+          <Blogs />
           {/* <RandomCreations /> */}
           <ContactShowcase />
         </main>
