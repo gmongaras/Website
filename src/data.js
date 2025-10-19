@@ -173,18 +173,20 @@ export const projects = [
 export const publications = [
   {
     title: "On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective",
-    venue: "Preprint",
+    venue: "TMLR",
     links: [
-      { label: "Code", href: "https://github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective" },
-      { label: "arXiv", href: "https://arxiv.org/abs/2507.23632" }
+      { label: "TMLR", href: "https://openreview.net/forum?id=PHcITOi3vV"},
+      { label: "arXiv", href: "https://arxiv.org/abs/2507.23632" },
+      { label: "Code", href: "https://github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective" }
     ]
   },
   {
     title: "Cottention: Linear Transformers With Cosine Attention",
     venue: "Springer Nature (Book Chapter)",
     links: [
+      { label: "Springer", href: "https://link.springer.com/book/10.1007/978-3-031-92602-0?sap-outbound-id=AD9F926E0AA16D13049BD2370EAFCAD37B0D3F1F" },
       { label: "arXiv", href: "https://arxiv.org/abs/2409.18747" },
-      { label: "Springer", href: "https://link.springer.com/book/10.1007/978-3-031-92602-0?sap-outbound-id=AD9F926E0AA16D13049BD2370EAFCAD37B0D3F1F" }
+      { label: "Code", href: "github.com/gmongaras/Cottention_Transformer" },
     ]
   },
 ]
