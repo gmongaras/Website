@@ -2,7 +2,8 @@ import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeH
 import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { SiHuggingface } from "react-icons/si"
-import { profile, education, skills, experience, projects, publications, articles, youtubeVideos, NeedleInAHaystackNote } from "./data"
+import { profile, education, skills, experience, publications, articles, youtubeVideos, NeedleInAHaystackNote } from "./data"
+import { projects } from "./projects"
 import { posts } from "./blogs"
 import GraphBackground from "./GraphBackground"
 import { motion, AnimatePresence } from "framer-motion"
@@ -455,6 +456,7 @@ const Header = ({ onMobileMenuToggle }) => {
     { href: "#publications", label: "Publications", icon: BookOpen },
     { href: "#media", label: "Media", icon: BookOpen },
     { href: "#blogs", label: "Blogs", icon: BookAudio },
+    { href: "#random", label: "Random", icon: Cpu },
   ]
 
   return (
@@ -1005,27 +1007,65 @@ const Experience = () => {
   )
 }
 
-const Projects = () => (
-  <section id="projects" className="section py-14 sm:py-20 scroll-mt-20">
-    <SectionTitle icon={Cpu} title="Projects" subtitle="Selected work" />
-    <HorizontalScrollContainer>
-      {projects.map((p, idx) => (
-        <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
-          <Card>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold break-words">{p.name}</h3>
-              <p className="text-sm text-white/60">{p.date}</p>
-              <p className="mt-2 text-white/90 break-words">{p.desc}</p>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {p.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
-            </div>
-          </Card>
-        </div>
-      ))}
-    </HorizontalScrollContainer>
-  </section>
-)
+const Projects = () => {
+  const [failedImages, setFailedImages] = useState(new Set())
+
+  const handleImageError = (idx) => {
+    setFailedImages(prev => new Set([...prev, idx]))
+  }
+
+  return (
+    <section id="projects" className="section py-14 sm:py-20 scroll-mt-20">
+      <SectionTitle icon={Cpu} title="Projects" subtitle="Selected work" />
+      <HorizontalScrollContainer>
+        {projects.map((p, idx) => (
+          <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
+            <Card>
+              <div className="flex-1 min-w-0">
+                {/* Project Image */}
+                <div className="relative group mb-4">
+                  {p.image && !failedImages.has(idx) ? (
+                    <div className="w-full h-48 rounded-lg overflow-hidden bg-gradient-to-br from-white/5 to-white/2 flex items-center justify-center">
+                      <LazyImage
+                        src={p.image}
+                        alt={p.name}
+                        className="max-w-full max-h-full object-contain"
+                        onError={() => handleImageError(idx)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center border border-white/10">
+                      <div className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-3 bg-accent/20 rounded-xl flex items-center justify-center">
+                          <Cpu className="w-8 h-8 text-accent" />
+                        </div>
+                        <p className="text-sm text-white/60">{p.name}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <h3 className="font-semibold break-words">{p.name}</h3>
+                <p className="text-sm text-white/60">{p.date}</p>
+                <p className="mt-2 text-white/90 break-words">{p.desc}</p>
+                {/* Project Skills */}
+                {p.skills && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {p.skills.map((skill, i) => (
+                      <span key={i} className="chip text-xs">{skill}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {p.links?.map((l, i) => <LinkIcon key={i} href={l.href} label={l.label} />)}
+              </div>
+            </Card>
+          </div>
+        ))}
+      </HorizontalScrollContainer>
+    </section>
+  )
+}
 
 const Publications = () => (
   <section id="publications" className="section py-14 sm:py-20 scroll-mt-20">
@@ -1237,6 +1277,7 @@ const ListRenderer = ({ items, ordered = false }) => {
 const LazyImage = ({ src, alt, className, onError, ...props }) => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const imgRef = useRef(null)
 
   useEffect(() => {
@@ -1260,19 +1301,26 @@ const LazyImage = ({ src, alt, className, onError, ...props }) => {
     return () => observer.disconnect()
   }, [])
 
+  const handleError = (e) => {
+    setHasError(true)
+    if (onError) {
+      onError(e)
+    }
+  }
+
   return (
     <div ref={imgRef} className={className}>
-      {isInView && (
+      {isInView && !hasError && (
         <img
           src={src}
           alt={alt}
           onLoad={() => setIsLoaded(true)}
-          onError={onError}
+          onError={handleError}
           className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           {...props}
         />
       )}
-      {!isLoaded && isInView && (
+      {!isLoaded && isInView && !hasError && (
         <div className="absolute inset-0 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
         </div>
@@ -1768,6 +1816,77 @@ const Media = () => {
   )
 }
 
+const RandomCreations = () => {
+  const randomProjects = [
+    {
+      title: "Tic Tac Toe AI",
+      description: "An intelligent AI opponent that learns from your moves and adapts its strategy. Built with reinforcement learning algorithms.",
+      image: "/random/tic-tac-toe-ai.jpg",
+      status: "Under Construction",
+      technologies: ["Python", "TensorFlow", "Reinforcement Learning"]
+    },
+    {
+      title: "Dino Game AI",
+      description: "AI agent that learns to play the classic Chrome Dino game using computer vision and neural networks.",
+      image: "/random/dino-game-ai.jpg", 
+      status: "Under Construction",
+      technologies: ["Python", "OpenCV", "PyTorch", "Computer Vision"]
+    },
+    {
+      title: "Protogen",
+      description: "A prototype AI assistant designed for rapid prototyping and experimentation with various AI models and techniques.",
+      image: "/random/protogen.jpg",
+      status: "Under Construction", 
+      technologies: ["Python", "FastAPI", "Transformers", "LangChain"]
+    }
+  ]
+
+  return (
+    <section id="random" className="section py-14 sm:py-20 scroll-mt-20">
+      <SectionTitle icon={Cpu} title="Random Creations" subtitle="Experimental projects & prototypes" />
+      <HorizontalScrollContainer>
+        {randomProjects.map((project, idx) => (
+          <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
+            <Card>
+              <div className="flex-1 min-w-0">
+                <div className="relative group mb-4">
+                  <div className="w-full h-48 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center border border-white/10">
+                    <div className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-3 bg-accent/20 rounded-xl flex items-center justify-center">
+                        <Cpu className="w-8 h-8 text-accent" />
+                      </div>
+                      <p className="text-sm text-white/60">Coming Soon</p>
+                    </div>
+                  </div>
+                  <div className="absolute top-2 right-2 bg-orange-500/90 text-white text-xs px-2 py-1 rounded">
+                    {project.status}
+                  </div>
+                </div>
+                <h3 className="font-semibold mb-2">{project.title}</h3>
+                <p className="text-white/90 text-sm mb-3">{project.description}</p>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {project.technologies.map((tech, i) => (
+                    <span key={i} className="chip text-xs">{tech}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-3">
+                <button 
+                  className="btn w-full flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"
+                  disabled
+                >
+                  <Cpu className="w-4 h-4" />
+                  Coming Soon
+                </button>
+              </div>
+            </Card>
+          </div>
+        ))}
+      </HorizontalScrollContainer>
+    </section>
+  )
+}
+
 const ContactShowcase = () => {
   return (
     <section id="contact" className="relative scroll-mt-20">
@@ -2049,7 +2168,7 @@ export default function App() {
           <Publications />
           <Media />
           <Blogs />
-          {/* <RandomCreations /> */}
+          <RandomCreations />
           <ContactShowcase />
         </main>
         <Footer />
