@@ -2131,6 +2131,8 @@ export default function App() {
         if (post) {
           setCurrentPost(post)
           setCurrentView('blog')
+          // Scroll to top when navigating to a blog post
+          window.scrollTo({ top: 0, behavior: 'smooth' })
         } else {
           setCurrentView('home')
           setCurrentPost(null)
