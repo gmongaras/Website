@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
-import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight } from "lucide-react"
+import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { SiHuggingface } from "react-icons/si"
 import { profile, education, skills, experience, publications, articles, youtubeVideos, NeedleInAHaystackNote } from "./data"
@@ -392,6 +392,25 @@ const Header = ({ onMobileMenuToggle }) => {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [menuTop, setMenuTop] = useState('92px')
+  const [blogsDropdownOpen, setBlogsDropdownOpen] = useState(false)
+  const blogsDropdownRef = useRef(null)
+
+  // Helper function to handle navigation
+  const handleNavClick = (href) => {
+    if (href.startsWith('#')) {
+      // If we're viewing a blog post (hash starts with #blog/), navigate to homepage first, then scroll to section
+      if (window.location.hash.startsWith('#blog/')) {
+        // Navigate to homepage with the target hash
+        window.location.href = `/${href}`
+      } else {
+        // If we're on the homepage, just scroll to the section
+        const element = document.querySelector(href)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      }
+    }
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 0)
@@ -447,6 +466,18 @@ const Header = ({ onMobileMenuToggle }) => {
     }
   }, [])
 
+  // Close blogs dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (blogsDropdownRef.current && !blogsDropdownRef.current.contains(event.target)) {
+        setBlogsDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   // Shared nav items
   const items = [
     { href: "#skills", label: "Skills", icon: Cpu },
@@ -474,12 +505,98 @@ const Header = ({ onMobileMenuToggle }) => {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1 text-sm">
-          {items.map(({ href, label }) => (
-            <a
-              key={href}
-              href={href}
-              className="relative group px-3 py-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            >
+          {items.map(({ href, label }) => {
+            // Special handling for Blogs nav item
+            if (href === "#blogs") {
+              return (
+                <div key={href} className="relative" ref={blogsDropdownRef}>
+                  <a
+                    href={href}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleNavClick(href)
+                    }}
+                    onMouseEnter={() => setBlogsDropdownOpen(true)}
+                    onMouseLeave={() => setBlogsDropdownOpen(false)}
+                    className="relative group px-3 py-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  >
+                    {/* subtle glow "pill" on hover */}
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 rounded-lg opacity-0 scale-95 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100"
+                      style={{
+                        // a soft accent-tinted radial highlight
+                        background:
+                          'radial-gradient(120% 140% at 50% 0%, rgba(59,0,102,0.22), rgba(59,0,102,0.12) 45%, transparent 70%)',
+                      }}
+                    />
+
+                    {/* label + animated underline */}
+                    <span
+                      className="relative z-10 inline-flex items-center gap-1 font-medium transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-[var(--accent)]"
+                      style={{ textRendering: 'optimizeLegibility' }}
+                    >
+                      {label}
+                      <ChevronDown 
+                        className={`w-3 h-3 transition-transform duration-200 ${
+                          blogsDropdownOpen ? 'rotate-180' : 'rotate-0'
+                        }`} 
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute left-1/2 -bottom-1 h-[2px] w-0 -translate-x-1/2 rounded-full transition-[width] duration-300 group-hover:w-full"
+                        style={{ backgroundColor: 'var(--accent)' }}
+                      />
+                    </span>
+                  </a>
+
+                  {/* Blogs Dropdown */}
+                  <div 
+                    className={`absolute top-full left-0 mt-2 w-64 bg-black/90 backdrop-blur-sm border border-white/10 rounded-lg shadow-xl z-50 transition-all duration-200 ${
+                      blogsDropdownOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+                    }`}
+                    onMouseEnter={() => setBlogsDropdownOpen(true)}
+                    onMouseLeave={() => setBlogsDropdownOpen(false)}
+                  >
+                    <div className="p-2">
+                      {posts.slice(0, 3).map((post) => (
+                        <a
+                          key={post.slug}
+                          href={`#blog/${post.slug}`}
+                          className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm"
+                        >
+                          <div className="font-medium text-white/90 truncate">{post.title}</div>
+                          <div className="text-xs text-white/60 mt-1">{post.date}</div>
+                        </a>
+                      ))}
+                      <div className="border-t border-white/10 my-1"></div>
+                      <a
+                        href="#blogs"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          handleNavClick('#blogs')
+                        }}
+                        className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm font-medium text-[var(--accent)]"
+                      >
+                        All Blogs
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            // Regular nav items
+            return (
+              <a
+                key={href}
+                href={href}
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleNavClick(href)
+                }}
+                className="relative group px-3 py-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
               {/* subtle glow “pill” on hover */}
               <span
                 aria-hidden
@@ -504,7 +621,8 @@ const Header = ({ onMobileMenuToggle }) => {
                 />
               </span>
             </a>
-          ))}
+            )
+          })}
         </nav>
 
 
@@ -602,7 +720,11 @@ const Header = ({ onMobileMenuToggle }) => {
                   <li key={href}>
                     <a
                       href={href}
-                      onClick={() => setOpen(false)}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setOpen(false)
+                        handleNavClick(href)
+                      }}
                       className="group flex items-center gap-3 py-3"
                     >
                       <div className="p-2 rounded-xl bg-accent/20 ring-1 ring-white/10">
@@ -625,7 +747,11 @@ const Header = ({ onMobileMenuToggle }) => {
               <div className="mt-3 grid grid-cols-1 gap-2">
                 <a
                   href="#contact"
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setOpen(false)
+                    handleNavClick('#contact')
+                  }}
                   className="btn btn-primary relative overflow-hidden group min-h-[44px] text-[15px] sm:text-sm whitespace-nowrap"
                 >
                   <span className="relative z-10 flex items-center gap-2">
@@ -1508,6 +1634,10 @@ const Blogs = () => {
                 <a 
                   href={`#blog/${post.slug}`}
                   className="btn w-full flex items-center justify-center gap-2"
+                  onClick={() => {
+                    // Ensure we scroll to top when clicking Read More
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }}
                 >
                   Read More
                   <ExternalLink className="w-4 h-4" />
@@ -2118,8 +2248,21 @@ const Footer = () => (
 
 export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [currentView, setCurrentView] = useState('home')
-  const [currentPost, setCurrentPost] = useState(null)
+  
+  // Initialize state based on current hash to prevent flash
+  const getInitialState = () => {
+    const hash = window.location.hash
+    if (hash.startsWith('#blog/')) {
+      const slug = hash.replace('#blog/', '')
+      const post = posts.find(p => p.slug === slug)
+      return { view: 'blog', post: post }
+    }
+    return { view: 'home', post: null }
+  }
+  
+  const initialState = getInitialState()
+  const [currentView, setCurrentView] = useState(initialState.view)
+  const [currentPost, setCurrentPost] = useState(initialState.post)
 
   // Handle hash-based routing for blog posts
   useEffect(() => {
@@ -2132,7 +2275,10 @@ export default function App() {
           setCurrentPost(post)
           setCurrentView('blog')
           // Scroll to top when navigating to a blog post
-          window.scrollTo({ top: 0, behavior: 'smooth' })
+          // Use setTimeout to ensure DOM has updated
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }, 100)
         } else {
           setCurrentView('home')
           setCurrentPost(null)
@@ -2140,11 +2286,40 @@ export default function App() {
       } else {
         setCurrentView('home')
         setCurrentPost(null)
+        // If we're on the homepage and there's a hash, scroll to that section
+        if (hash && hash !== '#') {
+          setTimeout(() => {
+            const element = document.querySelector(hash)
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth' })
+            }
+          }, 100)
+        }
       }
     }
 
-    // Check initial hash
-    handleHashChange()
+    // Only handle hash changes after initial load (not on initial render)
+    // since we've already set the initial state correctly
+    const handleInitialLoad = () => {
+      const hash = window.location.hash
+      if (hash.startsWith('#blog/')) {
+        // Already set correctly in initial state, just ensure scroll to top
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }, 100)
+      } else if (hash && hash !== '#') {
+        // If we're on the homepage with a hash, scroll to that section
+        setTimeout(() => {
+          const element = document.querySelector(hash)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' })
+          }
+        }, 100)
+      }
+    }
+
+    // Handle initial load
+    handleInitialLoad()
 
     // Listen for hash changes
     window.addEventListener('hashchange', handleHashChange)
