@@ -1222,13 +1222,14 @@ const TOKEN_TYPES = {
   UNORDERED_LIST: 'UNORDERED_LIST',
   IMAGE: 'IMAGE',
   CODE_BLOCK: 'CODE_BLOCK',
+  YOUTUBE: 'YOUTUBE',
   TEXT: 'TEXT'
 }
 
 // Tokenizer - converts markdown text into structured tokens
 const tokenizeContent = (text) => {
   const tokens = []
-  const lines = text.split('\n')
+  const lines = text.split(/(?<!\\)\n/)
   let i = 0
 
   while (i < lines.length) {
@@ -1260,12 +1261,14 @@ const tokenizeContent = (text) => {
       }
       i-- // Back up one since we'll increment at end of loop
     }
-    // Lists - collect multiple lines
+    // Lists - collect multiple lines including nested lists
     else if (line.match(/^\d+\.\s+/)) {
       const listItems = [line]
       i++
-      while (i < lines.length && lines[i].match(/^\d+\.\s+/)) {
-        listItems.push(lines[i])
+      while (i < lines.length && (lines[i].match(/^\d+\.\s+/) || lines[i].match(/^\s+\d+\.\s+/) || lines[i].trim() === '')) {
+        if (lines[i].trim() !== '') {
+          listItems.push(lines[i])
+        }
         i++
       }
       i-- // Back up one since we'll increment at end of loop
@@ -1273,8 +1276,10 @@ const tokenizeContent = (text) => {
     } else if (line.match(/^[-*]\s+/)) {
       const listItems = [line]
       i++
-      while (i < lines.length && lines[i].match(/^[-*]\s+/)) {
-        listItems.push(lines[i])
+      while (i < lines.length && (lines[i].match(/^[-*]\s+/) || lines[i].match(/^\s+[-*]\s+/) || lines[i].trim() === '')) {
+        if (lines[i].trim() !== '') {
+          listItems.push(lines[i])
+        }
         i++
       }
       i-- // Back up one since we'll increment at end of loop
@@ -1312,6 +1317,39 @@ const tokenizeContent = (text) => {
       }
       i-- // Back up one since we'll increment at end of loop
     }
+    // YouTube videos - detect {{youtube(url)}} syntax
+    else if (line.match(/^\{\{youtube\(([^)]+)\)\}\}$/)) {
+      const match = line.match(/^\{\{youtube\(([^)]+)\)\}\}$/)
+      const url = match[1]
+      
+      // Extract video ID from various YouTube URL formats
+      let videoId = null
+      if (url.includes('youtube.com/watch?v=')) {
+        videoId = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/)?.[1]
+      } else if (url.includes('youtu.be/')) {
+        videoId = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)?.[1]
+      } else if (url.match(/^[a-zA-Z0-9_-]{11}$/)) {
+        // Direct video ID
+        videoId = url
+      }
+      
+      if (videoId) {
+        tokens.push({ 
+          type: TOKEN_TYPES.YOUTUBE, 
+          content: { videoId: videoId, url: url }
+        })
+        
+        // Skip any empty lines immediately after the YouTube video
+        i++
+        while (i < lines.length && !lines[i].trim()) {
+          i++
+        }
+        i-- // Back up one since we'll increment at end of loop
+      } else {
+        // If we can't parse the URL, treat it as regular text
+        tokens.push({ type: TOKEN_TYPES.TEXT, content: line })
+      }
+    }
     // Images
     else if (line.match(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/)) {
       const match = line.match(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/)
@@ -1331,12 +1369,13 @@ const tokenizeContent = (text) => {
     else if (line.trim()) {
       tokens.push({ type: TOKEN_TYPES.TEXT, content: line })
     } else {
-      // Empty line - only add if it's not immediately after an image or header
+      // Empty line - only add if it's not immediately after an image, header, or YouTube video
       const prevToken = tokens[tokens.length - 1]
       if (!prevToken || (prevToken.type !== TOKEN_TYPES.IMAGE && 
           prevToken.type !== TOKEN_TYPES.HEADER_1 && 
           prevToken.type !== TOKEN_TYPES.HEADER_2 && 
-          prevToken.type !== TOKEN_TYPES.HEADER_3)) {
+          prevToken.type !== TOKEN_TYPES.HEADER_3 &&
+          prevToken.type !== TOKEN_TYPES.YOUTUBE)) {
         tokens.push({ type: TOKEN_TYPES.TEXT, content: '' })
       }
     }
@@ -1347,6 +1386,16 @@ const tokenizeContent = (text) => {
   return tokens
 }
 
+// Helper function to escape HTML entities
+const escapeHtml = (text) => {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // Individual renderer components
 const HeaderRenderer = ({ level, content }) => {
   const classes = {
@@ -1355,8 +1404,37 @@ const HeaderRenderer = ({ level, content }) => {
     3: "text-xl font-bold mt-8 mb-4 text-white"
   }
   
+  // Process LaTeX in header content
+  const processedContent = escapeHtml(content)
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 py-0.5 rounded text-sm">$1</code>')
+    // Process LaTeX inline
+    .replace(/\$([^$]+)\$/g, (match, latex) => {
+      try {
+        return katex.renderToString(latex, { displayMode: false })
+      } catch (error) {
+        return `<span class="text-red-400">LaTeX Error: ${latex}</span>`
+      }
+    })
+    // Process LaTeX blocks
+    .replace(/\$\$([^$]+)\$\$/g, (match, latex) => {
+      try {
+        const rendered = katex.renderToString(latex, { displayMode: true })
+        return `<div class="my-6 text-center">${rendered}</div>`
+      } catch (error) {
+        return `<div class="my-6 text-center text-red-400">LaTeX Error: ${latex}</div>`
+      }
+    })
+  
   const Tag = `h${level}`
-  return <Tag className={classes[level]}>{content}</Tag>
+  return (
+    <Tag 
+      className={classes[level]}
+      dangerouslySetInnerHTML={{ __html: processedContent }}
+    />
+  )
 }
 
 const LaTeXRenderer = ({ content, displayMode = false }) => {
@@ -1391,6 +1469,9 @@ const CodeBlockRenderer = ({ code, language = 'text' }) => {
     }
   }
 
+  // Convert double backslashes to single for display
+  const processedCode = code.replace(/\\\\/g, '\\')
+
   return (
     <div className="my-6">
       <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group">
@@ -1420,7 +1501,7 @@ const CodeBlockRenderer = ({ code, language = 'text' }) => {
         </div>
         <pre className="p-4 overflow-x-auto">
           <code className={`language-${language} text-sm text-gray-100 whitespace-pre`}>
-            {code}
+            {processedCode}
           </code>
         </pre>
       </div>
@@ -1429,15 +1510,11 @@ const CodeBlockRenderer = ({ code, language = 'text' }) => {
 }
 
 const ListRenderer = ({ items, ordered = false }) => {
-  const listClass = ordered 
-    ? "list-decimal list-outside mb-4 space-y-1 ml-6"
-    : "list-disc list-outside mb-4 space-y-1 ml-6"
-  
   const processListItem = (item) => {
-    const content = item.replace(/^[-*]\s+|^\d+\.\s+/, '')
+    const content = item.replace(/^\s*[-*]\s+|^\s*\d+\.\s+/, '')
     
     // Process inline formatting and LaTeX
-    const processedContent = content
+    const processedContent = escapeHtml(content)
       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -1464,19 +1541,68 @@ const ListRenderer = ({ items, ordered = false }) => {
     
     return processedContent
   }
-  
-  return (
-    <ol className={listClass}>
-      {items.map((item, index) => (
-        <li key={index} className="mb-1 pl-2">
+
+  const parseNestedList = (items, ordered = false, level = 0) => {
+    const result = []
+    let i = 0
+
+    while (i < items.length) {
+      const item = items[i]
+      const indentMatch = item.match(/^(\s*)/)
+      const currentIndent = indentMatch ? indentMatch[1].length : 0
+      
+      // Extract content without list marker
+      const content = item.replace(/^\s*[-*]\s+|^\s*\d+\.\s+/, '')
+      
+      // Check if this item has nested children
+      const children = []
+      let j = i + 1
+      while (j < items.length) {
+        const nextItem = items[j]
+        const nextIndentMatch = nextItem.match(/^(\s*)/)
+        const nextIndent = nextIndentMatch ? nextIndentMatch[1].length : 0
+        
+        if (nextIndent > currentIndent) {
+          children.push(nextItem)
+          j++
+        } else {
+          break
+        }
+      }
+      
+      // Create the list item
+      const listItem = (
+        <li key={i} className="mb-1 pl-2">
           <div 
             dangerouslySetInnerHTML={{ __html: processListItem(item) }}
             style={{ display: 'contents' }}
           />
+          {children.length > 0 && (
+            <div className="ml-4 mt-1">
+              {parseNestedList(children, ordered, level + 1)}
+            </div>
+          )}
         </li>
-      ))}
-    </ol>
-  )
+      )
+      
+      result.push(listItem)
+      i = j
+    }
+    
+    const listClass = ordered 
+      ? "list-decimal list-outside mb-4 space-y-1 ml-6"
+      : "list-disc list-outside mb-4 space-y-1 ml-6"
+    
+    const Tag = ordered ? 'ol' : 'ul'
+    
+    return (
+      <Tag className={listClass}>
+        {result}
+      </Tag>
+    )
+  }
+  
+  return parseNestedList(items, ordered)
 }
 
 // LazyImage component with intersection observer
@@ -1536,6 +1662,30 @@ const LazyImage = ({ src, alt, className, onError, ...props }) => {
 }
 
 const ImageRenderer = ({ alt, src, caption }) => {
+  // Process LaTeX in caption content
+  const processedCaption = caption ? escapeHtml(caption)
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 py-0.5 rounded text-sm">$1</code>')
+    // Process LaTeX inline
+    .replace(/\$([^$]+)\$/g, (match, latex) => {
+      try {
+        return katex.renderToString(latex, { displayMode: false })
+      } catch (error) {
+        return `<span class="text-red-400">LaTeX Error: ${latex}</span>`
+      }
+    })
+    // Process LaTeX blocks
+    .replace(/\$\$([^$]+)\$\$/g, (match, latex) => {
+      try {
+        const rendered = katex.renderToString(latex, { displayMode: true })
+        return `<div class="my-6 text-center">${rendered}</div>`
+      } catch (error) {
+        return `<div class="my-6 text-center text-red-400">LaTeX Error: ${latex}</div>`
+      }
+    }) : null
+
   return (
     <div className="mb-4 my-4 text-center">
       <div className="group relative inline-block overflow-visible rounded-lg p-2">
@@ -1545,11 +1695,29 @@ const ImageRenderer = ({ alt, src, caption }) => {
           className="max-w-full h-auto rounded-lg mx-auto shadow-lg transition-transform duration-300 ease-out group-hover:scale-105" 
         />
       </div>
-      {caption && (
-        <p className="text-sm text-white/60 text-center mt-2 italic">
-          {caption}
-        </p>
+      {processedCaption && (
+        <p 
+          className="text-sm text-white/60 text-center mt-2 italic"
+          dangerouslySetInnerHTML={{ __html: processedCaption }}
+        />
       )}
+    </div>
+  )
+}
+
+const YouTubeRenderer = ({ videoId }) => {
+  return (
+    <div className="my-6">
+      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+        <iframe
+          className="absolute top-0 left-0 w-full h-full rounded-lg border border-white/10"
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="YouTube video player"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
     </div>
   )
 }
@@ -1561,7 +1729,7 @@ const TextRenderer = ({ content }) => {
   if (!content.trim()) return <p class="mb-4"></p>
   
   // Process inline formatting
-  const processedContent = content
+  const processedContent = escapeHtml(content)
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -1629,6 +1797,13 @@ const ContentRenderer = React.memo(({ content }) => {
                 key={index} 
                 code={token.content.code} 
                 language={token.content.language} 
+              />
+            )
+          case TOKEN_TYPES.YOUTUBE:
+            return (
+              <YouTubeRenderer 
+                key={index} 
+                videoId={token.content.videoId} 
               />
             )
           case TOKEN_TYPES.TEXT:

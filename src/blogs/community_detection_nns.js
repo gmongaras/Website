@@ -4,7 +4,9 @@ export const post = {
   date: "2022-04-10",
   tags: ["Neural Networks", "Graph Theory", "Machine Learning", "Research"],
   excerpt: "Using neural networks to solve community detection problems faster and more accurately than traditional algorithms like Girvan-Newman.",
-  body: `This article is written for a class project and is a continuation of a previous article linked below. The previous article, written by  which describes how the Girvan Newman algorithm attempts to solve the community detection Problem:
+  body: String.raw`Note :Imported from [medium](https://medium.com/smucs/community-detection-with-neural-networks-2e6c79a28d0c)
+  
+This article is written for a class project and is a continuation of a previous article linked below. The previous article, written by  which describes how the Girvan Newman algorithm attempts to solve the community detection Problem:
 
 See [Why Girvan-Newman?](https://medium.com/@trevordohm/68506e824e93) for context.
 
