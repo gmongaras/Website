@@ -45,11 +45,7 @@ As much as I would like to go into the math of DDPMs, my brain is too smooth. Fo
 
 DDPMs are where the current diffusion model began. In this paper, the authors propose using a Markov Chain model, progressively adding noise to an image.
 
-Press enter or click to view image in full size
-
-![]()
-
-Diffusion Generation
+![Diffusion Generation](/blogs/images/diffusion_models/1.webp "Diffusion Generation")
 
 A function, $q(x_t | x_{t-1})$, is used to add noise to an image one step at a time. At each step, more noise is added to the image until the image is essentially pure Gaussian noise at time $T$.
 
@@ -59,39 +55,25 @@ The goal is to teach a model to reverse the process so that we can generate imag
 
 Going from time $t=0$ to $time t=T$ by progressively adding more noise to the input image is called the "forward process" (even though it's going backward in the image). The function $q$ defines the forward process and has a closed-form solution that allows us to directly model the forward process given $x_0$ (The image, $x$, at diffusion timestep $0$, the original image). The function is defined below:
 
-Press enter or click to view image in full size
-
-![]()
-
-Forward process function
+![Forward process function](/blogs/images/diffusion_models/2.webp "Forward process function")
 
 The function $q$ uses a Normal (Gaussian) Distribution to model the noising process. There is a problem with this approach, though. The distribution must be sampled $t$ times to get an image at time $t$ from time $t=0$. We could store all images for all values of $t$ in memory or load them from disk as needed, but normal values of $T$ are greater than or equal to 1,000, so we would have to store 1,000 variations of each image to train the model, which is not desired.
 
 To solve these issues, the authors model the forward process as follows:
 
-Press enter or click to view image in full size
-
-![]()
-
-Modeling the forward process using the reparameterization trick
+![Modeling the forward process using the reparameterization trick](/blogs/images/diffusion_models/3.webp "Modeling the forward process using the reparameterization trick")
 
 This method uses the [reparameterization trick](https://sassafras13.github.io/ReparamTrick/), which allows us to model the distribution, but in a way where we can skip directly from timestep $0$ to $t$ according to $\bar{\alpha}_t$. In a way, the formula above is weighing $x_0$ (the original image) and epsilon (sampled noise from a Normal Distribution) according to $\bar{\alpha}_t$ (the noise scheduler).
 
 $\bar{\alpha}_t$ is calculated based on a noise scheduler. The lower this value is, the more noise is added. The authors define $\alpha_t$ as $1-\beta_t$ and $\bar{\alpha}_t$ as a cumulative product of alpha values from time $0$ to time $t$.
 
-Press enter or click to view image in full size
-
-![]()
-
-Normal and cumulative noise schedulers
+![Normal and cumulative noise schedulers](/blogs/images/diffusion_models/4.webp "Normal and cumulative noise schedulers")
 
 $\beta_t$ is our noise scheduler. The authors of the DDPM paper use a linear scheduler between values of $10^{-4}$ and $0.02$. At time $t=0$, the value of $\beta_t$ will be $10^{-4}$. At time $T$, $\beta_t$ will be $0.02$. These value kind of act like percentages for the amount of noise added at time $t$ relative to time $t-1$.
 
 Note that the amount of noise added at time $t$ is not just a rate between $10^{-4}$ and $0.02$, rather we are using $\bar{\alpha}_t$. $\alpha_t$ is large at small values of $t$ and small at large values of $t$. Additionally, $\bar{\alpha}_t$ is a product of all $\alpha_t$ values from $0$ to $t$. So the noise added at time $t$ is the product of all $\alpha_t$ values, meaning the amount of noise at each timestep increases exponentially, and the percent of the original image decreases exponentially. Below is a curve showing the values of $\bar{\alpha}_t$ at all timesteps from $t=0$ to $t=T=1000$.
 
-![]()
-
-Noise level according to $\bar{a}$ over time
+![Noise level according to $\bar{a}$ over time](/blogs/images/diffusion_models/5.webp "Noise level according to $\\bar{a}$ over time")
 
 To summarize the forward process, we can use the closed-form solution of the $q$ function to add noise to an image from $x_0$ (the original image) to $x_t$ (the image at diffusion step $t$) in a single operation.
 
@@ -103,9 +85,7 @@ Neural networks to the rescue! Instead, we can estimate the reverse process usin
 
 Intuitively, since we use a normal distribution to model the forward process, we can also use a normal distribution to model the reverse process. So, we can have the model predict the mean and variance of a normal distribution where $\mu_\theta$ is the predicted mean of the distribution and $\Sigma_\theta$ is the predicted variance or the distribution. Note that this normal distribution is predicted for all pixels; it's not one normal distribution for the entire image.
 
-![]()
-
-Reverse diffusion process
+![Reverse diffusion process](/blogs/images/diffusion_models/6.webp "Reverse diffusion process")
 
 "We also see that learning reverse process variances (by incorporating a parameterized diagonal $\Sigma_\theta(x_t)$ into the variational bound) leads to unstable training and poorer sample quality compared to fixed variances." (4.2) The DDPM authors find that it's much easier to keep the variance, $\Sigma_\theta$, constant (which we'll talk more about in the next section), and they set $\Sigma_\theta=\beta_t$ since $\beta_t$ is the noise variance at timestep $t$.
 
@@ -113,9 +93,7 @@ Since we know the normal distribution that got us to step $t$ using the function
 
 The authors note that since they keep the variance constant, they only have to predict the mean of the distribution. Better yet, we can just predict the noise, $\epsilon$, that was sampled from the normal distribution and added to the image through the reparameterization trick. The authors found that predicting the noise was more stable. Since we just have to predict the noise added, we can use the MSE loss between the predicted noise and the actual noise added to the image.
 
-![]()
-
-Model and MSE Loss
+![Model and MSE Loss](/blogs/images/diffusion_models/7.webp "Model and MSE Loss")
 
 One may think it may be hard for a model to learn the noise since noise is random and a neural network is usually deterministic. But, if we give the model the noisy image at time $t$ and the timestep $t$, then the model can find a way to extract the noise from the noisy image, which can be used to reverse the noising process.
 
@@ -125,11 +103,7 @@ So the authors construct the loss so that the model is more biased toward learni
 
 The reverse process is typically modeled using a U-net, as shown below:
 
-Press enter or click to view image in full size
-
-![]()
-
-U-Net for extracting noise from a given image
+![U-Net for extracting noise from a given image](/blogs/images/diffusion_models/8.webp "U-Net for extracting noise from a given image")
 
 The input is the image at time, $t$, and the output is the noise within that image. Additionally, at each layer in the network, we add time information to help the model know where it's at in the diffusion process. So the input is actually the input image at time, $t$, and the timestep itself, $t$.
 
@@ -137,19 +111,13 @@ $p(x_{t-1} | x_t, t)$
 
 To encode the timestep in a usable form, we can use the ["Attention is All You Need" positional encodings](https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/). Instead of encoding the location in the sequence, we can treat the embeddings as timestep vectors where a vector represents a timestep.
 
-Press enter or click to view image in full size
-
-![]()
-
-Adding time information to the model
+![Adding time information to the model](/blogs/images/diffusion_models/9.webp "Adding time information to the model")
 
 You can project the time vector to the number of channels and create two vectors, one to shift the intermediate image encodings and one to scale the intermediate image encodings.
 
 The paper ["Diffusion Models Beat GANs on Image Synthesis"](https://arxiv.org/abs/2105.05233) proposes this method of adding time information and is called "Adaptive Group Normalization." Specifically, it adds the information after each *GroupNorm* layer:
 
-![]()
-
-AdaGN formulation
+![AdaGN formulation](/blogs/images/diffusion_models/10.webp "AdaGN formulation")
 
 $y_s$ is the scale vector, and $y_b$ is the shift vector. In the paper, the authors make $y_b$ class information instead of time information to give the model knowledge of what class we want it to generate. To create the class vector, $y_b$, one can one-hot encode the class and feed the one-hot vector through a feed-forward layer. The idea of class information addition will become very important later with classifier-free guidance.
 
@@ -159,11 +127,7 @@ The best part about this method of adding time information is the dependence onl
 
 With the forward and backward processes defined, we can train the model and generate images by the following training/denoising loops:
 
-Press enter or click to view image in full size
-
-![]()
-
-DDPM training loop
+![DDPM training loop](/blogs/images/diffusion_models/11.webp "DDPM training loop")
 
 The left loop trains a model as follows:
 
@@ -188,17 +152,11 @@ When all $T$ iterations are done, a new image will be generated at timestep $0$.
 
 Part 4 of algorithm two may be a little confusing, and if you want to learn more about how it's derived, the paper [Understanding Diffusion Models: A Unified Perspective](https://arxiv.org/pdf/2208.11970.pdf) derives it at EQ 84.
 
-![]()
-
-Sampling Algorithm From Line 4
+![Sampling Algorithm From Line 4](/blogs/images/diffusion_models/12.webp "Sampling Algorithm From Line 4")
 
 Intuitively, the predicted noise theoretically removes all noise from the image at timestep $t$, making the image $x_0$ when the noise is removed. This is what the first term does in the sampling algorithm. In reality, that was just a prediction, and since the image is all noise, the output won't resemble any sort of image. So, we must add more noise back to the image, but at timestep $t-1$ and do this for all timesteps. The noise is re-added in term 2.
 
-Press enter or click to view image in full size
-
-![]()
-
-<https://learnopencv.com/image-generation-using-diffusion-models/>
+![Diffusion Process Visualization](/blogs/images/diffusion_models/13.gif "https://learnopencv.com/image-generation-using-diffusion-models")
 
 ## Improving DDPMs
 
@@ -209,23 +167,17 @@ The main issue DDPMs had is the log-likelihood score (meaning the model may be a
 
 The authors had a few other changes, but I just the two main improvements still used today are shown above. The authors also increase the number of timesteps to $T=4000$ from $T=1000$. Increasing the number of steps from 1,000 to 4,000 may increase FID scores and log-likelihood scores a little, but waiting four times longer to generate an image gets really annoying.
 
-### Learning \Sigma\_\theta
+### Learning $\Sigma_\theta$
 
 One of the main improvements is the prediction of the variance, which the original DDPM paper decided not to do because "We also see that learning reverse process variances (by incorporating a parameterized diagonal $\Sigma_\theta(x_t)$ into the variational bound) leads to unstable training and poorer sample quality compared to fixed variances." (page 6, DDPM)
 
 The improved DDPM paper decides to learn the variances to help improve the model's log-likelihood. However, they run into an issue. They find that the instability of the variance predictions comes from the average size of the variances and find the variances are very small. Neural networks have issues predicting very small values as it may lead to vanishing gradients. So, they predict $v$ to interpolate between the upper ($\beta_t$) and lower ($\tilde{\beta}_t$) bounds in the log domain, which appears to yield stable predictions for the variances:
 
-Press enter or click to view image in full size
-
-![]()
-
-Variance parameterization
+![Variance parameterization](/blogs/images/diffusion_models/14.webp "Variance parameterization")
 
 $\beta_t$ is just the normal old variance value in the forward process, whereas $\tilde{\beta_t}$ is a scaled form of $\beta_t$ based on $\bar{\alpha}_t$ and $\bar{\alpha}_{t-1}$.
 
-![]()
-
-Upper bound variance formulation
+![Upper bound variance formulation](/blogs/images/diffusion_models/15.webp "Upper bound variance formulation")
 
 The original DDPM paper states that "The first choice ($\beta_t$) is optimal for $x_0 ~ N(0, I)$, and the second ($\tilde{\beta}_t$) is optimal for $x_0$ deterministically set to one point." (page 3, DDPM)
 
@@ -233,19 +185,11 @@ The original DDPM paper states that "The first choice ($\beta_t$) is optimal for
 
 The quote above didn't make much sense, so I tried to understand it from the paper preceding the DDPM paper. The original paper has the following derivation for the upper and lower bounds:
 
-Press enter or click to view image in full size
-
-![]()
-
-Upper and lower variance bounds
+![Upper and lower variance bounds](/blogs/images/diffusion_models/16.webp "Upper and lower variance bounds")
 
 Note that this is in terms of the forward process, not the backward process. The $H$ functions are just the Cross-Entropy function of the system.
 
-Press enter or click to view image in full size
-
-![]()
-
-Entropy of a system formulation
+![Entropy of a system formulation](/blogs/images/diffusion_models/17.webp "Entropy of a system formulation")
 
 I am going to try to explain how I understand it.
 
@@ -277,9 +221,7 @@ These bounds are very useful to have the model estimate the variance at any time
 
 Remember that the loss function is the MSE between the predicted and true noise in the image. While the noise can directly model the mean of the predicted distribution, there needs to be another way to model the variance of the output distribution. So, we have to change the loss to incorporate the variances. The loss is changed as follows.
 
-![]()
-
-Combined loss for variance and mean
+![Combined loss for variance and mean](/blogs/images/diffusion_models/18.webp "Combined loss for variance and mean")
 
 $L_{simple}$ is the original objective, the MSE between the predicted and real noise sample.
 
@@ -287,27 +229,19 @@ Lambda is a weighting term that the authors set to $0.001$. This weighs the simp
 
 $L_{vlb}$ is the variational lower bound objective, which the original DDPM paper formalizes as the KL divergence between the predicted Gaussian distribution and the actual Gaussian distribution of each pixel in the image at timestep $t$:
 
-![]()
-
-KL divergence loss between predicted and actual distributions for each pixel
+![KL divergence loss between predicted and actual distributions for each pixel](/blogs/images/diffusion_models/19.webp "KL divergence loss between predicted and actual distributions for each pixel")
 
 The KL divergence loss minimizes the difference between the two distributions. In our case, the KL divergence is between the predicted Gaussian distribution for each pixel in the image vs the actual Gaussian distribution for each pixel in the image. This loss is pretty intuitive since we want the loss to model how far the predicted pixel distributions are and real pixel distributions are at timestep $t$.
 
 Our Gaussian distributions have the following formula:
 
-Press enter or click to view image in full size
-
-![]()
-
-Gaussian formulation DDPM context
+![Gaussian formulation DDPM context](/blogs/images/diffusion_models/20.webp "Gaussian formulation DDPM context")
 
 For both the forward and backward process, the variance can be either the lower or upper bound variance, that is $\beta_t$ or $\tilde{\beta}_t$. But since we want to model the variance, the variance for the backward process becomes the parameterized variance $\Sigma_\theta$. A known function parameterizes the mean for the forward process and the neural network for the backward process.
 
 Since the Gaussian formula has both mean and variance, the KL Divergence loss optimizes both the mean and variance at the same time. The authors put a stop gradient for the mean statistic in this loss function since $L_simple$ is already optimizing the mean. This way, the mean isn't being optimized by two loss functions representing the same function we want to minimize. So, this loss only optimizes the variance.
 
-![]()
-
-Presented log-likelihood scores in the Improved DDPM Paper
+![Presented log-likelihood scores in the Improved DDPM Paper](/blogs/images/diffusion_models/21.webp "Presented log-likelihood scores in the Improved DDPM Paper")
 
 The table above shows the presented log-likelihood scores (lower is better) for the original DDPM model, improved DDPM model, and others. The improved DDPM model does better than the original DDPM but still does not outperform SOTA (state-of-the-art) models at the time.
 
@@ -317,19 +251,11 @@ Interestingly, in my implementation, I found that the prediction of these varian
 
 The second improvement the improved DDPM paper introduced is using a different learning rate scheduler. The authors note that "the end of the forward noising process is too noisy, and so doesn't contribute very much to sample quality." (Page 4, Improved DDPMs)
 
-Press enter or click to view image in full size
-
-![]()
-
-Linear vs cosine noise strategies
+![Linear vs cosine noise strategies](/blogs/images/diffusion_models/22.webp "Linear vs cosine noise strategies")
 
 The main problem with the linear scheduler is for small images. The image is not far from pure Gaussian noise too early in the diffusing process, which may make it hard for the model to learn the reverse process. Essentially, noise is being added too fast. The cosine scheduler adds noise slower to retain image information for later timesteps.
 
-Press enter or click to view image in full size
-
-![]()
-
-Linear vs cosine cumulative and relative noise additions
+![Linear vs cosine cumulative and relative noise additions](/blogs/images/diffusion_models/23.webp "Linear vs cosine cumulative and relative noise additions")
 
 As you can see, the linear scheduler on the right converges to an $\bar{\alpha}_t$ value of $0$ early in the diffusing process, meaning the image will be nearly pure gaussian noise early in the diffusing process. The cosine scheduler, on the other hand, converges to $0$ much later.
 
@@ -341,11 +267,7 @@ One problem with the DDPM process is the speed of generating an image after trai
 
 The DDIM paper introduces a way to speed up image generation with little image quality tradeoff. It does so by redefining the diffusion process as a non-Markovian process.
 
-Press enter or click to view image in full size
-
-![]()
-
-DDPM vs DDIM models
+![DDPM vs DDIM models](/blogs/images/diffusion_models/24.webp "DDPM vs DDIM models")
 
 The left figure is the original DDPM paper which requires all past denoising steps from time $T$ to time $t-1$ to obtain the next denoised image at time $t$. DDPMs are modeled as Markov Chains, meaning an image at time $t$ cannot be generated until the entire chain before $t$ has been generated.
 
@@ -353,57 +275,37 @@ The DDIM paper proposes a method to make the process non-markovian (in the right
 
 First, the reverse diffusion process for a single step is redefined:
 
-![]()
-
-Redefinition of the reverse process
+![Redefinition of the reverse process](/blogs/images/diffusion_models/25.webp "Redefinition of the reverse process")
 
 **Note**: The DDIM paper uses alphas without the bar, but the alpha values in the paper are alpha bar (cumulative alpha) values used in the DDPM paper. It's a little confusing, so I will replace their alphas with alpha bars to keep the notation consistent.
 
 First, the reformalization is equivalent to the formalization in the DDPM paper, but only when the variance is equal to $\tilde{\beta}_t$.
 
-Press enter or click to view image in full size
-
-![]()
-
-Variance is just $\tilde{\beta}_t$
+![Variance formulation](/blogs/images/diffusion_models/26.webp "Variance is just $\tilde{\beta}_t$")
 
 The authors don't explicitly state that their formulation of sigma is just $\tilde{\beta}_t$, but with a little algebra, you can find that's the case.
 
 When $\Sigma = 0$, we get a DDIM:
 
-Press enter or click to view image in full size
-
-![]()
-
-DDIM Denoising Formula
+![DDIM Denoising Formula](/blogs/images/diffusion_models/27.webp "DDIM Denoising Formula")
 
 Notice how there's no added noise to the data. This is the trick of the DDIM. When $\Sigma = 0$, the denoising process becomes completely deterministic, and the only noise is the original noise at $x_0$ because no new noise is added during the denoising process.
 
 Since there is no noise in the reverse process, the process is deterministic, and we no longer have to use a Markov Chain since Markov Chains are used for probabilistic processes. We can use a Non-Markovian process, which allows us to skip steps.
 
-![]()
-
-Non-Markovian reverse and forward process
+![Non-Markovian reverse and forward process](/blogs/images/diffusion_models/28.webp "Non-Markovian reverse and forward process")
 
 In the diagram above, we skip from step $x_3$ to $x_1$, skipping $x_2$. The authors model the new diffusion process as a subsequence, $\tau$, which is a subset of the original diffusion sequence. For example, I could sample every other diffusion step in the diffusion process to get a subsequence of $\tau = [0, 2, 4, …, T-2, T]$.
 
 Finally, the authors decide the model the diffusion model variance as an interpolation between DDIMs and DDPMs using the following formula:
 
-Press enter or click to view image in full size
-
-![]()
-
-DDIM variance
+![DDIM variance](/blogs/images/diffusion_models/29.webp "DDIM variance")
 
 The diffusion model is a DDIM when $\eta=0$ as there is no noise and an original DDPM when $\eta=1$. Any $\eta$ between $0$ and $1$ is an interpolation between a DDIM and DDPM.
 
 DDIMs perform much better than DDPMs when the number of steps taken is less than the original $T$ steps. The chart below shows DDPM and DDIM [FID scores](https://machinelearningmastery.com/how-to-implement-the-frechet-inception-distance-fid-from-scratch) (which score diversity and image quality) on $\eta$ interpolations from 0 to 1 and on 10, 20, 50, 100, and 1000 generation steps. Note that the original model was trained on $T=1000$ steps.
 
-Press enter or click to view image in full size
-
-![]()
-
-DDIM results with different \eta values and different step sizes on different data sets.
+![DDIM results with different eta values and different step sizes on different data sets.](/blogs/images/diffusion_models/30.webp "DDIM results with different $\eta$ values and different step sizes on different data sets.")
 
 The lower the FID score, the better. Although the DDPM performs the best at the original 1,000 steps, the DDIM closely follows when generating images with much fewer generation steps.
 
@@ -413,17 +315,11 @@ You essentially have a tradeoff between image quality and time to generate when 
 
 Classifier guidance was introduced in the paper "Diffusion Models Beat GANs on Image Synthesis" and essentially uses a classifier to guide the diffusion model to generate images of a desired class.
 
-Press enter or click to view image in full size
-
-![]()
-
-Classifier guidance sampling for DDPMs and DDIMs
+![Classifier guidance sampling for DDPMs and DDIMs](/blogs/images/diffusion_models/31.webp "Classifier guidance sampling for DDPMs and DDIMs")
 
 The authors defined different algorithms for both DDPMs and DDIMs. The main idea is to take a pretrained classifier on the data you train the diffusion model.
 
-![]()
-
-Gradient of the log of the classifier parameters
+![Gradient of the log of the classifier parameters](/blogs/images/diffusion_models/32.webp "Gradient of the log of the classifier parameters")
 
 The above function plays a major role in classifier guidance. You essentially sample gradients from a classifier when classifying an image of a desired class and feed that gradient information into the diffusion model to lead it to generate the desired class.
 
@@ -435,9 +331,7 @@ Classifier-Free Guidance improves classifier guidance by eliminating the classif
 
 Assuming we can add class information to our diffusion model (which we can do with AdaGN), we can configure the model to generate images with and without classes:
 
-![]()
-
-Noise estimation model with and without class (null class)
+![Noise estimation model with and without class (null class)](/blogs/images/diffusion_models/33.webp "Noise estimation model with and without class (null class)")
 
 - $z_\lambda$ is the image interpolation at some timestep $t$.
 - $\epsilon_\theta$ is our model, which we train to predict noise within $z_\lambda$.
@@ -446,11 +340,7 @@ Noise estimation model with and without class (null class)
 
 To add classifier-free guidance to our diffusion model, all we have to do is train the model to generate images with class information and without class information.
 
-Press enter or click to view image in full size
-
-![]()
-
-Training a diffusion model for classifier-free guidance
+![Training a diffusion model for classifier-free guidance](/blogs/images/diffusion_models/34.webp "Training a diffusion model for classifier-free guidance")
 
 The training loop is slightly changed so that we can effectively train the model to generate images with and without class information. The authors define $p_{uncond}$ as the probability of replacing a class with a null class to force the model to learn how to generate images without class information.
 
@@ -466,11 +356,7 @@ Notice how the training loop is almost exactly the same as the DDPM training loo
 
 After training, the generation/sampling loop is also slightly changed.
 
-Press enter or click to view image in full size
-
-![]()
-
-Sampling with classifier-free guidance
+![Sampling with classifier-free guidance](/blogs/images/diffusion_models/35.webp "Sampling with classifier-free guidance")
 
 1. Sample noise from a normal distribution.
 2. Normal sampling loop. Loop from time $t=1$ to time $t=T$.
@@ -479,9 +365,7 @@ Sampling with classifier-free guidance
 
 The sampling loop is almost exactly the same as the DDPM sampling loop, but with one replacement:
 
-![]()
-
-Noise model parameterization for classifier-free guidance
+![Noise model parameterization for classifier-free guidance](/blogs/images/diffusion_models/36.webp "Noise model parameterization for classifier-free guidance")
 
 The noise prediction requires two forward passes of the same image, $z_t$. One forward pass calculates the predicted noise not conditioned on a desired class, and the other calculates the predicted noise conditioned on the desired class information.
 
@@ -493,11 +377,7 @@ To strengthen the signal from the class information, we can remove the signal fr
 
 This method works well up to a point. I've found a $w$ value within the range [5, 20] works well but using a high $w$ value removes too much signal from the image and essentially begins producing random noise since so much signal is removed.
 
-Press enter or click to view image in full size
-
-![]()
-
-Different FID and IS scores given different *w (guidance) scales*
+![Different FID and IS scores given different w (guidance) scales](/blogs/images/diffusion_models/37.webp "Different FID and IS scores given different *w (guidance) scales*")
 
 The authors show one of the downsides to classifier guidance. Classifier guidance has a tradeoff between FID score and IS (inception score). FID measures quality and mode coverage, while IS measures the quality of images.
 
@@ -558,11 +438,7 @@ Although I keep the classifier guidance value constant, I wanted to test variati
 
 Below are the FID results for all u-net block variations on all four different DDIM/DDPM parameter changes:
 
-Press enter or click to view image in full size
-
-![]()
-
-I calculate the FID score every 50,000 steps. I only show the minimum FID score over all 600,000 steps to reduce clutter.
+![FID Results Comparison](/blogs/images/diffusion_models/38.webp "FID Results Comparison")
 
 Clearly, the models with two residual blocks performed the best. As for the attention addition, it doesn't look like it made much of a difference.
 
@@ -570,11 +446,7 @@ Also, using a DDIM (0 scale) with a step size of 10 outperformed all other DDPM/
 
 Just to get an idea of how the FID was moving around during training, here's the FID graph of the Res-Res-Atn model:
 
-Press enter or click to view image in full size
-
-![]()
-
-Model with a u-net blocks with a sequential res block -> res block -> cls attention block -> attention block -> channel attention block and its FID scores over steps
+![Model with a u-net blocks with a sequential res block -> res block -> cls attention block -> attention block -> channel attention block and its FID scores over steps](/blogs/images/diffusion_models/39.webp "Model with a u-net blocks with a sequential res block -> res block -> cls attention block -> attention block -> channel attention block and its FID scores over steps")
 
 All models appeared to have this sudden increase in FID score around 450K steps which is very weird. Since FID doesn't measure overfitting, I cannot say it's overfitting at this point, and the loss curves show that the model is not taking a large step that destroys learning.
 
@@ -589,15 +461,9 @@ Finally, I am going to generate a batch of images with the following parameters:
 
 Below are nine random images on random classes I pulled from the 1,000 classes the models are trained on.
 
-Press enter or click to view image in full size
+![Generated Images Animation](/blogs/images/diffusion_models/40.gif "Generated Images Animation")
 
-![]()
-
-Compressing a 65 MB gif to 22 MB doesn't look very good. Oh well.
-
-![]()
-
-Resulting images
+![Resulting images](/blogs/images/diffusion_models/41.webp "Resulting images")
 
 Overall, the results are OK. If I test different architectures a little more and fiddle with the hyperparameters, I may be able to improve the FID score some more, but I'm satisfied with what's produced for now.
 
