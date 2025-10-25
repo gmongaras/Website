@@ -7,6 +7,7 @@ import { profile, education, skills, experience, publications, articles, youtube
 import { projects } from "./projects"
 import { posts } from "./blogs"
 import GraphBackground from "./GraphBackground"
+import SEO from "./components/SEO"
 import { motion, AnimatePresence } from "framer-motion"
 import 'katex/dist/katex.min.css'
 import katex from 'katex'
@@ -1825,6 +1826,11 @@ const BlogPost = ({ post }) => {
   if (!post) {
     return (
       <div className="min-h-screen flex items-center justify-center">
+        <SEO 
+          title="Blog Post Not Found"
+          description="The requested blog post could not be found."
+          url="/#blog/not-found"
+        />
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-4">Blog Post Not Found</h1>
           <a href="/" className="btn">Back to Home</a>
@@ -1833,8 +1839,43 @@ const BlogPost = ({ post }) => {
     )
   }
 
+  // Create structured data for the blog post
+  const blogStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": post.excerpt,
+    "author": {
+      "@type": "Person",
+      "name": "Gabriel Mongaras",
+      "url": "https://gmongaras.me"
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Gabriel Mongaras"
+    },
+    "datePublished": post.date,
+    "dateModified": post.date,
+    "url": `https://gmongaras.me/#blog/${post.slug}`,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://gmongaras.me/#blog/${post.slug}`
+    },
+    "keywords": post.tags.join(", "),
+    "articleSection": "Technology",
+    "wordCount": post.body.split(' ').length
+  }
+
   return (
     <div className="min-h-screen">
+      <SEO 
+        title={post.title}
+        description={post.excerpt}
+        keywords={post.tags}
+        url={`/#blog/${post.slug}`}
+        type="article"
+        structuredData={blogStructuredData}
+      />
       <Header />
       <div className="section py-16 sm:py-24">
         <div className="max-w-4xl mx-auto">
@@ -2597,6 +2638,12 @@ export default function App() {
   // Otherwise render the main homepage
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Gabriel Mongaras — AI Engineer & Researcher"
+        description="AI Engineer & Researcher focused on diffusion models, attention mechanisms, and efficient AI systems. Experience at Etched, Google, Amazon, and Meta."
+        keywords={["AI Engineer", "Machine Learning", "Diffusion Models", "Neural Networks", "Research", "PyTorch", "Transformers"]}
+        url="/"
+      />
       <Header onMobileMenuToggle={setIsMobileMenuOpen} />
       <div className="flex-1 relative">
         <main>
