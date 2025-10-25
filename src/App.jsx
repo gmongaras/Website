@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
+import { createPortal } from "react-dom"
 import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { SiHuggingface } from "react-icons/si"
@@ -391,7 +392,6 @@ const LinkIcon = ({ href, label }) => (
 const Header = ({ onMobileMenuToggle }) => {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const [menuTop, setMenuTop] = useState('92px')
   const [blogsDropdownOpen, setBlogsDropdownOpen] = useState(false)
   const blogsDropdownRef = useRef(null)
 
@@ -419,26 +419,6 @@ const Header = ({ onMobileMenuToggle }) => {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Calculate menu position dynamically
-  useEffect(() => {
-    const calculateMenuPosition = () => {
-      const header = document.querySelector('header')
-      if (header) {
-        const headerRect = header.getBoundingClientRect()
-        const headerBottom = headerRect.bottom
-        setMenuTop(`${headerBottom + 12}px`)
-      }
-    }
-    
-    calculateMenuPosition()
-    window.addEventListener('scroll', calculateMenuPosition, { passive: true })
-    window.addEventListener('resize', calculateMenuPosition)
-    
-    return () => {
-      window.removeEventListener('scroll', calculateMenuPosition)
-      window.removeEventListener('resize', calculateMenuPosition)
-    }
-  }, [])
 
   // Close on Escape
   useEffect(() => {
@@ -453,6 +433,7 @@ const Header = ({ onMobileMenuToggle }) => {
       onMobileMenuToggle(open)
     }
   }, [open, onMobileMenuToggle])
+
 
   // C) Auto-close the sheet if resizing to >= md (768px)
   useEffect(() => {
@@ -675,25 +656,36 @@ const Header = ({ onMobileMenuToggle }) => {
         style={{ opacity: scrolled ? 1 : 0, background: 'var(--gradient-header-fade)', filter: 'blur(12px)' }}
       />
 
-      {/* Mobile sheet */}
-      <AnimatePresence>
-        {open && (
+      {/* Mobile sheet - Portal implementation */}
+      {open && createPortal(
+        <AnimatePresence>
           <>
             {/* Backdrop */}
-            <motion.button
-              type="button"
+            <motion.div
               aria-label="Close menu"
-              onClick={() => setOpen(false)}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setOpen(false)
+              }}
+              className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm pointer-events-auto cursor-pointer"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setOpen(false)
+                }
+              }}
             />
             {/* Sheet */}
             <motion.nav
               id="mobile-nav"
-              className="fixed z-50 left-3 right-3 rounded-2xl border border-white/10 bg-black/90 p-4 shadow-2xl"
-              style={{ top: menuTop }}
+              className="fixed z-[9999] top-[72px] left-3 right-3 rounded-2xl border border-white/10 bg-black/90 p-4 shadow-2xl pointer-events-auto"
               initial={{ y: -20, opacity: 0, scale: 0.98 }}
               animate={{ y: 0, opacity: 1, scale: 1, transition: { type: "spring", stiffness: 320, damping: 24 } }}
               exit={{ y: -12, opacity: 0, scale: 0.98 }}
@@ -706,7 +698,11 @@ const Header = ({ onMobileMenuToggle }) => {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setOpen(false)
+                  }}
                   aria-label="Close menu"
                   className="p-2 rounded-lg hover:bg-white/5 transition"
                   style={{ color: 'var(--accent)' }}
@@ -762,8 +758,9 @@ const Header = ({ onMobileMenuToggle }) => {
               </div>
             </motion.nav>
           </>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </header>
   )
 }
@@ -1224,6 +1221,7 @@ const TOKEN_TYPES = {
   ORDERED_LIST: 'ORDERED_LIST',
   UNORDERED_LIST: 'UNORDERED_LIST',
   IMAGE: 'IMAGE',
+  CODE_BLOCK: 'CODE_BLOCK',
   TEXT: 'TEXT'
 }
 
@@ -1281,6 +1279,38 @@ const tokenizeContent = (text) => {
       }
       i-- // Back up one since we'll increment at end of loop
       tokens.push({ type: TOKEN_TYPES.UNORDERED_LIST, content: listItems })
+    }
+    // Code blocks - detect LaTeX-style {{code(language)}} pattern
+    else if (line.match(/^\{\{code\(([^)]*)\)\}\}/)) {
+      const match = line.match(/^\{\{code\(([^)]*)\)\}\}/)
+      const language = match[1].trim() || 'text'
+      const codeLines = []
+      i++
+      
+      // Collect all lines until we find the closing {{code}}
+      while (i < lines.length && !lines[i].trim().match(/^\{\{code\}\}$/)) {
+        codeLines.push(lines[i])
+        i++
+      }
+      
+      // Skip the closing line
+      if (i < lines.length) {
+        i++
+      }
+      
+      tokens.push({ 
+        type: TOKEN_TYPES.CODE_BLOCK, 
+        content: { 
+          code: codeLines.join('\n'), 
+          language: language 
+        }
+      })
+      
+      // Skip any empty lines immediately after the code block
+      while (i < lines.length && !lines[i].trim()) {
+        i++
+      }
+      i-- // Back up one since we'll increment at end of loop
     }
     // Images
     else if (line.match(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/)) {
@@ -1346,6 +1376,56 @@ const LaTeXRenderer = ({ content, displayMode = false }) => {
       </span>
     )
   }
+}
+
+const CodeBlockRenderer = ({ code, language = 'text' }) => {
+  const [copied, setCopied] = React.useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy code:', err)
+    }
+  }
+
+  return (
+    <div className="my-6">
+      <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group">
+        <div className="flex items-center justify-between bg-gray-800 px-4 py-2 text-sm text-gray-300 border-b border-gray-700">
+          <span className="font-mono">{language}</span>
+          <button
+            onClick={handleCopy}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700"
+            title="Copy code"
+          >
+            {copied ? (
+              <>
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy
+              </>
+            )}
+          </button>
+        </div>
+        <pre className="p-4 overflow-x-auto">
+          <code className={`language-${language} text-sm text-gray-100 whitespace-pre`}>
+            {code}
+          </code>
+        </pre>
+      </div>
+    </div>
+  )
 }
 
 const ListRenderer = ({ items, ordered = false }) => {
@@ -1541,6 +1621,14 @@ const ContentRenderer = React.memo(({ content }) => {
                 alt={token.content.alt} 
                 src={token.content.src} 
                 caption={token.content.caption} 
+              />
+            )
+          case TOKEN_TYPES.CODE_BLOCK:
+            return (
+              <CodeBlockRenderer 
+                key={index} 
+                code={token.content.code} 
+                language={token.content.language} 
               />
             )
           case TOKEN_TYPES.TEXT:
@@ -2349,10 +2437,6 @@ export default function App() {
           <ContactShowcase />
         </main>
         <Footer />
-        {/* Blur overlay */}
-        {isMobileMenuOpen && (
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300 pointer-events-none z-30" />
-        )}
       </div>
     </div>
   )

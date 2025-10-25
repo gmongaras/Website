@@ -457,7 +457,7 @@ def main(argv: list[str] | None = None) -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main([
-            "https://medium.com/smucs/community-detection-with-neural-networks-2e6c79a28d0c"
+            "https://gmongaras.medium.com/coding-a-virtual-ai-girlfriend-f951e648aa46"
         ]))
     except KeyboardInterrupt:
         print("\nCancelled.")
