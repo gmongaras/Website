@@ -1,0 +1,21 @@
+{
+  "name": "Gabriel Mongaras Portfolio",
+  "short_name": "Gabriel Mongaras",
+  "description": "AI Engineer & Researcher Portfolio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#3B0066",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "192x192",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}

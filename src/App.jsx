@@ -478,7 +478,7 @@ const Header = ({ onMobileMenuToggle }) => {
         {/* Brand */}
         <a href="/" className="flex items-center gap-2 tracking-wide hover:opacity-90">
           <img
-            src="/icon.png"
+            src="/favicon.ico"
             alt="Icon"
             loading="eager"
             className="h-10 w-10 md:h-16 md:w-16 rounded-md object-cover shadow-sm"
