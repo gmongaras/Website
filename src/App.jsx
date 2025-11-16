@@ -110,7 +110,7 @@ const CopyButton = ({
 
 const Chip = ({ children }) => <span className="chip">{children}</span>
 
-const Card = ({ children }) => <div className="card p-5 h-full w-full flex flex-col">{children}</div>
+const Card = ({ children, className = "" }) => <div className={`card p-5 h-full w-full flex flex-col ${className}`}>{children}</div>
 
 const HorizontalScrollContainer = forwardRef(({ children, className = "" }, ref) => {
   const scrollRef = useRef(null)
@@ -1144,16 +1144,16 @@ const Projects = () => {
       <HorizontalScrollContainer>
         {projects.map((p, idx) => (
           <div key={idx} className="flex-shrink-0 w-80 flex min-w-0 max-w-80">
-            <Card>
+            <Card className="group">
               <div className="flex-1 min-w-0">
                 {/* Project Image */}
-                <div className="relative group mb-4">
+                <div className="relative mb-4">
                   {p.image && !failedImages.has(idx) ? (
                     <div className="w-full h-48 rounded-lg overflow-hidden bg-gradient-to-br from-white/5 to-white/2 flex items-center justify-center">
                       <LazyImage
                         src={p.image}
                         alt={p.name}
-                        className="max-w-full max-h-full object-contain"
+                        className="max-w-full max-h-full object-contain transition-transform duration-300 ease-out group-hover:scale-105"
                         onError={() => handleImageError(idx)}
                       />
                     </div>
