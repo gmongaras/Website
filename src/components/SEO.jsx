@@ -5,7 +5,7 @@ const SEO = ({
   title, 
   description, 
   keywords = [], 
-  image = "/me.jpg", 
+  image = "/og-image.png", 
   url, 
   type = "website",
   structuredData = null 
