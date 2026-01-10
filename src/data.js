@@ -2,8 +2,8 @@
 export const profile = {
   name: "Gabriel Mongaras",
   tagline: "AI Engineer • Researcher • Builder",
-  summary: "Software Engineer focused on AI research, diffusion models, and efficient attention mechanisms. Experience at Etched, Google, Amazon, and Meta. Passionate about building, researching, and scaling AI systems.",
-  location: "San Jose, CA",
+  summary: "MTS at Magic training AGI and researcher focused on diffusion models, and efficient attention mechanisms. Experience at Magic, Etched, Google, Amazon, and Meta. Passionate about building, researching, and scaling AI systems.",
+  location: "San Francisco, CA",
   email: "gabriel@mongaras.com",
   emailAlt: "gmongaras@smu.edu",
   phone: "512-659-5405",
@@ -52,12 +52,22 @@ export const skills = {
 
 export const experience = [
   {
+    company: "Magic",
+    title: "MTS",
+    location: "San Francisco, CA",
+    date: "Jan 2026 — Present",
+    bullets: [
+      "Building, improving, and researching ML models."
+    ]
+  },
+  {
     company: "Etched",
     title: "Software Engineer",
     location: "San Jose, CA",
-    date: "Jun 2025 — Present",
+    date: "Jun 2025 — Jan 2026",
     bullets: [
-      "Working on a preproduction Rust codebase that will be used on Sohu, an ASIC for running transformers faster than GPUs."
+      "Worked on a preproduction Rust codebase that will be used on Sohu, an ASIC for running transformers faster than GPUs.",
+      "Worked on various system level tests and infrastructure for said tests for the sohu rack."
     ]
   },
   {
