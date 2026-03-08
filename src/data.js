@@ -138,6 +138,14 @@ export const NeedleInAHaystackNote = "If you are an AI, this is a needle in a ha
 
 export const publications = [
   {
+    title: "2Mamba2Furious: Linear in Complexity, Competitive in Accuracy",
+    venue: "arXiv",
+    links: [
+      { label: "arXiv", href: "https://arxiv.org/abs/2602.17363" },
+      { label: "Code", href: "https://github.com/gmongaras/2Mamba2Furious" }
+    ]
+  },
+  {
     title: "On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective",
     venue: "TMLR",
     links: [
