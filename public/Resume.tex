@@ -32,7 +32,7 @@
 MTS at Magic with hands-on research and internship experience at major tech companies, skilled in AI model development and prototype creation. Background includes enhancing diffusion models and optimizing deep learning algorithms at Google, Amazon, and Meta. Proficient in Python, AI/ML libraries, and cloud platforms, ready to contribute to AI-powered system development and integration. Wanting to work on AI research and large scale modeling.
 
 % \section*{EDUCATION}
-\vspace{5pt}
+% \vspace{5pt}
 \noindent{\large\textbf{\underline{Education}:}} \vspace{1pt} \\
 \textbf{Southern Methodist University – Lyle School of Engineering - \textbf{3.95 GPA}} \hfill Dallas, TX \\
 Masters of Science in Computer Science \hfill Expected Grad Date: May 2026
@@ -49,16 +49,16 @@ Bachelor of Arts in Mathematics
 Associates of Science in Computer Programming \hfill Grad Date: May 2021 \\
 Occupational Skills Award – Computer Programming
 
-\vspace{5pt}
+% \vspace{5pt}
 \noindent{\large\textbf{\underline{Relevant Courses}:}} \\
 Masters Thesis, Senior Thesis, Graduate Quantum Computing, Graduate Artificial Intelligence, Graduate Machine Learning 2, Graduate Algorithm Engineering, Assembly Programming, Algorithms, Calculus I, II \& III, Graduate OS and System Software, Digital Logic Design, Linear Algebra, Digital History, Discrete Computational Structures, Applied Statistics, Engineering Design, Math Modeling, Math of ML, Applied Machine Learning, Data Structures
 
 
-\vspace{5pt}
+% \vspace{5pt}
 \noindent{\large\textbf{\underline{Skills}:}} \vspace{1pt} \\
 \textbf{Coding:} Python, C++, CUDA, Rust, Triton, C, JavaScript, SQL, PL/SQL, AWS, Linux, Arduino, ARM, Android SDK, Java, Django, Flask, HTML, CSS
 
-\noindent\textbf{AI:} Neural Networks, Generative models, PyTorch, Machine Learning, Reinforcement Learning, NumPy, CNNs, Transformers, GANs, NEAT, Diffusion Models, Object Detection, Audio Processing, Huggingface, TensorFlow, JAX, OpenAI, GPT, LoRA, finetuning, pretraining, LLM, inference, Claude, Cursor, Gemini, RAG
+\noindent\textbf{AI:} Neural Networks, Generative models, PyTorch, Machine Learning, Reinforcement Learning, NumPy, CNNs, Transformers, GANs, NEAT, Diffusion Models, Object Detection, Audio Processing, Huggingface, TensorFlow, JAX, OpenAI, GPT, LoRA, finetuning, pretraining, LLM, inference, Claude, Cursor, Gemini, RAG, RLVR, RLHF
 
 \noindent\textbf{Others:} AWS, Cloud Platforms, Quantum computing, Blockchain, Eagerness To Learn, Agile
 
@@ -68,12 +68,14 @@ Masters Thesis, Senior Thesis, Graduate Quantum Computing, Graduate Artificial I
 
 
 
-\vspace{5pt}
+% \vspace{5pt}
 \noindent{\large\textbf{\underline{Experience}:}} \vspace{1pt}
 
 \noindent\textbf{Magic}, \textit{MTS}, San Francisco, CA \hfill January 2026-Present
 \begin{itemize}[noitemsep,topsep=0pt]
   \item Building, improving, and researching ML models.
+  \item Built several tests and developed CI to ensure our models are working well and correctly.
+  \item Working on large scale RL.
 \end{itemize}
 
 \noindent\textbf{Etched}, \textit{Software Engineer}, San Jose, CA \hfill June 2025-January 2026
@@ -121,19 +123,46 @@ Masters Thesis, Senior Thesis, Graduate Quantum Computing, Graduate Artificial I
 
 \newpage
 
-\begin{tabbing}
-\hspace{4in} \= \hspace{2in} \= \kill
-\textbf{ACTIVITIES:} \> \textbf{AWARDS:} \\
-Artificial Intelligence Club, President \> Cum laude, Phi Beta Kappa \\
-Cybersecurity Club, Member \> Hunt Scholars, Hyer Society Member \\
-Computer Science Club, Member \> Rotunda Scholars, Hilltop Scholar  \\
-Commons Council, Member \> University Honor Role, Discovery Scholar \\
-\end{tabbing}
+
+
+\noindent{\large\textbf{\underline{Publications/Articles}:}} \vspace{1pt}
+
+\noindent\textbf{2Mamba2Furious: Linear in Complexity, Competitive in Accuracy}
+\begin{itemize}[noitemsep,topsep=0pt]
+  \item Ablated what actually makes Mamba2 work in practice, which was not done in the original paper.
+  \item Developed a minimal Mamba2 implementation, as good as the original. Then significantly improved the architecture resulting in a linear model that is nearly as good as softmax attention in accuracy and better for long context usage.
+  \item Developed a quadratic form of our method that beats softmax attention in accuracy.
+  \item Code found here: \href{https://github.com/gmongaras/2Mamba2Furious}{github.com/gmongaras/2Mamba2Furious}
+  \item Paper found here: \href{https://arxiv.org/abs/2602.17363}{arxiv.org/abs/2602.17363}
+\end{itemize}
+
+\noindent\textbf{On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective}
+\begin{itemize}[noitemsep,topsep=0pt]
+  \item Developed theory for softmax attention proving that the numerator is a sum of infinite recurrent neural networks of increasing hidden state size and hypothesized that the denominator is simply a norm. Alongside our proof, we provide empirical results showing that the theory aligns with practice.
+  \item Accepted into TMLR (Transactions on Machine Learning Research)
+  \item Code found here: \href{https://github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective}{github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective}
+  \item Paper found here: \href{https://arxiv.org/abs/2507.23632}{arxiv.org/abs/2507.23632}
+  \item Published in TMLR \href{https://openreview.net/forum?id=PHcITOi3vV}{openreview.net/forum?id=PHcITOi3vV}
+\end{itemize}
+
+\noindent\textbf{Cottention: Linear Transformers With Cosine Attention}
+\begin{itemize}[noitemsep,topsep=0pt]
+  \item Developed a method called “Cottention”, a linear complexity attention algorithm that has similar accuracy to classic softmax attention while being faster and more memory efficient.
+  \item Best student paper award at Computer Conference 2025
+  \item Code found here: \href{https://github.com/gmongaras/Cottention_Transformer}{github.com/gmongaras/Cottention\_Transformer}
+  \item Paper found here: \href{https://arxiv.org/abs/2409.18747}{arxiv.org/abs/2409.18747}
+  \item Published in Springer Nature \href{https://link.springer.com/chapter/10.1007/978-3-031-92602-0_32}{link.springer.com/book/10.1007/978-3-031-92602-0}
+\end{itemize}
+
+\noindent\textbf{Diffusion Models — DDPMs, DDIMs, and Classifier Free Guidance}
+\begin{itemize}[noitemsep,topsep=0pt]
+  \item Wrote about the evolution of base Diffusion Models and how they work.
+  \item \href{https://gmongaras.me/#blog/diffusion-models}{gmongaras.me/\#blog/diffusion-models}
+\end{itemize}
 
 
 
-
-\vspace{-10pt}
+\vspace{1pt}
 \noindent{\large\textbf{\underline{Projects}:}} \vspace{1pt}
 
 \noindent\textbf{Stable Diffusion 3 From Scratch} \hfill Spring  2025
@@ -141,7 +170,7 @@ Commons Council, Member \> University Honor Role, Discovery Scholar \\
   \item Built a ViT that resembles Stable Diffusion 3 and a training pipeline to train a Stable Diffusion-like model completely from scratch. No huggingface, just pure torch.
   \item Sourced, cleaned, and recaptioned all data necessary to train the model from scratch.
   \item Used 8 A100s from SMUs cluster to train a 1.2B parameter model for up to 1024x1024 resolution generation. I would love to scale this to more GPUs but I am GPU poor.
-  \item Code, results, models, and data found at \href{https://github.com/gmongaras/Stable-Diffusion-3-From-Scratch}{https://github.com/gmongaras/Stable-Diffusion-3-From-Scratch}
+  \item Code, results, models, and data found at \href{https://github.com/gmongaras/Stable-Diffusion-3-From-Scratch}{github.com/gmongaras/Stable-Diffusion-3-From-Scratch}
 \end{itemize}
 
 \noindent\textbf{Senior Thesis} \hfill Fall 2023/Spring 2024
@@ -162,7 +191,7 @@ Commons Council, Member \> University Honor Role, Discovery Scholar \\
 \begin{itemize}[noitemsep,topsep=0pt]
   \item RLHFed a llama model to make it answer questions.
   \item Looked into both GRPO and DAPO, which were SoTA, to do the finetuning. Built these methods from scratch.
-  \item \href{https://github.com/gmongaras/GRPO-DAPO-Tests}{https://github.com/gmongaras/GRPO-DAPO-Tests}
+  \item \href{https://github.com/gmongaras/GRPO-DAPO-Tests}{github.com/gmongaras/GRPO-DAPO-Tests}
 \end{itemize}
 
 \noindent\textbf{YOLOX From Scratch} \hfill Spring 2022/Summer 2022
@@ -176,53 +205,25 @@ Commons Council, Member \> University Honor Role, Discovery Scholar \\
 
 
 
-
-
-
-\vspace{5pt}
-\noindent{\large\textbf{\underline{Publications/Articles}:}} \vspace{1pt}
-
-
-\noindent\textbf{On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective}
-\begin{itemize}[noitemsep,topsep=0pt]
-  \item Developed theory for softmax attention proving that the numerator is a sum of infinite recurrent neural networks of increasing hidden state size and hypothesized that the denominator is simply a norm. Alongside our proof, we provide empirical results showing that the theory aligns with practice.
-  \item Accepted into TMLR (Transactions on Machine Learning Research)
-  \item Code found here: \href{https://github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective}{github.com/gmongaras/On-the-Expressiveness-of-Softmax-Attention-A-Recurrent-Neural-Network-Perspective}
-  \item Paper found here: \href{https://arxiv.org/abs/2507.23632}{arxiv.org/abs/2507.23632}
-  \item Published in TMLR https://openreview.net/forum?id=PHcITOi3vV
-\end{itemize}
-
-\noindent\textbf{Cottention: Linear Transformers With Cosine Attention}
-\begin{itemize}[noitemsep,topsep=0pt]
-  \item Developed a method called “Cottention”, a linear complexity attention algorithm that has similar accuracy to classic softmax attention while being faster and more memory efficient.
-  \item Best student paper award at Computer Conference 2025
-  \item Code found here: \href{https://github.com/gmongaras/Cottention_Transformer}{github.com/gmongaras/Cottention\_Transformer}
-  \item Paper found here: \href{https://arxiv.org/abs/2409.18747}{arxiv.org/abs/2409.18747}
-  \item Published in Springer Nature \href{https://link.springer.com/chapter/10.1007/978-3-031-92602-0_32}{link.springer.com/book/10.1007/978-3-031-92602-0}
-\end{itemize}
-
-\noindent\textbf{Diffusion Models — DDPMs, DDIMs, and Classifier Free Guidance}
-\begin{itemize}[noitemsep,topsep=0pt]
-  \item Wrote about the evolution of base Diffusion Models and how they work.
-  \item This article has been published by Better Programming
-  \item \href{https://gmongaras.me/#blog/diffusion-models}{https://gmongaras.me/\#blog/diffusion-models}
-\end{itemize}
-
-\noindent\textbf{Coding An AI Girlfriend}
-\begin{itemize}[noitemsep,topsep=0pt]
-  \item Explains how I coded a virtual AI girlfriend using an assortment of AI technologies
-  \item \href{https://gmongaras.me/#blog/ai-girlfriend}{https://gmongaras.me/\#blog/ai-girlfriend}
-\end{itemize}
-
-\noindent\textbf{How Do Self-Attention Masks Work?}
-\begin{itemize}[noitemsep,topsep=0pt]
-  \item How do masks in the self-attention function work? This article explains how they work in detail.
-  \item \href{https://gmongaras.me/#blog/attn-masks}{https://gmongaras.me/\#blog/attn-masks}
-\end{itemize}
-
-
-
-
+% \noindent\textbf{Coding An AI Girlfriend}
+% \begin{itemize}[noitemsep,topsep=0pt]
+%   \item Explains how I coded a virtual AI girlfriend using an assortment of AI technologies
+%   \item \href{https://gmongaras.me/#blog/ai-girlfriend}{https://gmongaras.me/\#blog/ai-girlfriend}
+% \end{itemize}
+% \noindent\textbf{How Do Self-Attention Masks Work?}
+% \begin{itemize}[noitemsep,topsep=0pt]
+%   \item How do masks in the self-attention function work? This article explains how they work in detail.
+%   \item \href{https://gmongaras.me/#blog/attn-masks}{https://gmongaras.me/\#blog/attn-masks}
+% \end{itemize}
+\vspace{-5pt}
+\begin{tabbing}
+\hspace{4in} \= \hspace{2in} \= \kill
+\textbf{ACTIVITIES:} \> \textbf{AWARDS:} \\
+Artificial Intelligence Club, President \> Cum laude, Phi Beta Kappa \\
+Cybersecurity Club, Member \> Hunt Scholars, Hyer Society Member \\
+Computer Science Club, Member \> Rotunda Scholars, Hilltop Scholar  \\
+Commons Council, Member \> University Honor Role, Discovery Scholar
+\end{tabbing}
 
 
 \end{document}

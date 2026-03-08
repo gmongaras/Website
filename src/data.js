@@ -46,7 +46,7 @@ export const education = [
 
 export const skills = {
   coding: ["Python", "C++", "CUDA", "Rust", "Triton", "C", "JavaScript", "SQL", "PL/SQL", "AWS", "Linux", "Arduino", "ARM", "Android SDK", "Java", "Django", "Flask", "HTML", "CSS"],
-  ai: ["Neural Networks", "Generative Models", "PyTorch", "Machine Learning", "Reinforcement Leanring", "NumPy", "CNNs", "Transformers", "GANs", "Diffusion Models", "Object Detection", "Audio Processing", "Huggingface", "TensorFlow", "JAX", "OpenAI", "GPT", "LoRA", "finetuning", "pretraining", "LLMs", "inference", "Claude", "Cursor", "Gemini"],
+  ai: ["Neural Networks", "Generative Models", "PyTorch", "Machine Learning", "Reinforcement Leanring", "NumPy", "CNNs", "Transformers", "GANs", "Diffusion Models", "Object Detection", "Audio Processing", "Huggingface", "TensorFlow", "JAX", "OpenAI", "GPT", "LoRA", "finetuning", "pretraining", "LLMs", "inference", "Claude", "Cursor", "Gemini", "RAG", "RLVR", "RLHF"],
   other: ["AWS", "Cloud Platforms", "Quantum Computing", "Blockchain", "Agile", "Eagerness To Learn"]
 }
 
