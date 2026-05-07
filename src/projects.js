@@ -1,6 +1,16 @@
 // Projects data
 export const projects = [
   {
+    name: "2Mamba2Furious",
+    date: "May 2025 - March 2026",
+    desc: "Code for my paper \"2Mamba2Furious: Linear in complexity, competitive in accuracy\" ",
+    image: "/projects/2mamba2furious.png",
+    skills: [ "Transformers", "Pretraining", "Linear attention", "Research", ],
+    links: [
+      { label: "Code", href: "https://github.com/gmongaras/2Mamba2Furious" }
+    ]
+  },
+  {
     name: "On the Expressiveness of Softmax Attention",
     date: "2025-03-29",
     desc: "Code for my paper \"On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective\" ",

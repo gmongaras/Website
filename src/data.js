@@ -21,7 +21,7 @@ export const education = [
     school: "Southern Methodist University — Lyle School of Engineering",
     program: "M.S. Computer Science",
     location: "Dallas, TX",
-    date: "Expected May 2026",
+    date: "Graduated May 2026 • GPA 3.9",
   },
   {
     school: "Southern Methodist University — Lyle School of Engineering",
@@ -46,8 +46,8 @@ export const education = [
 
 export const skills = {
   coding: ["Python", "C++", "CUDA", "Rust", "Triton", "C", "JavaScript", "SQL", "PL/SQL", "AWS", "Linux", "Arduino", "ARM", "Android SDK", "Java", "Django", "Flask", "HTML", "CSS"],
-  ai: ["Neural Networks", "Generative Models", "PyTorch", "Machine Learning", "Reinforcement Leanring", "NumPy", "CNNs", "Transformers", "GANs", "Diffusion Models", "Object Detection", "Audio Processing", "Huggingface", "TensorFlow", "JAX", "OpenAI", "GPT", "LoRA", "finetuning", "pretraining", "LLMs", "inference", "Claude", "Cursor", "Gemini", "RAG", "RLVR", "RLHF"],
-  other: ["AWS", "Cloud Platforms", "Quantum Computing", "Blockchain", "Agile", "Eagerness To Learn"]
+  ai: ["Neural Networks", "Generative Models", "PyTorch", "Machine Learning", "Reinforcement Learning", "NumPy", "CNNs", "Transformers", "GANs", "Diffusion Models", "Object Detection", "Audio Processing", "Huggingface", "TensorFlow", "JAX", "OpenAI", "GPT", "LoRA", "finetuning", "pretraining", "LLMs", "inference", "Claude", "Cursor", "Gemini", "RAG", "RLVR", "RLHF"],
+  other: ["AWS", "Cloud Platforms", "Quantum Computing", "Blockchain", "Agile"]
 }
 
 export const experience = [
@@ -57,7 +57,9 @@ export const experience = [
     location: "San Francisco, CA",
     date: "Jan 2026 — Present",
     bullets: [
-      "Building, improving, and researching ML models."
+      "Building, improving, and researching large-scale ML models.",
+      "Built several tests and developed CI to ensure our models are working well and correctly",
+      "Working on large scale RL"
     ]
   },
   {
