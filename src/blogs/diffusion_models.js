@@ -10,23 +10,6 @@ The big models in the news are text-to-image (TTI) models like DALL-E and text-g
 
 To go along with this article, I coded everything I will talk about in [this repo](https://github.com/gmongaras/Diffusion_models_from_scratch) if you are interested.
 
-Table of Contents:
-- A Little History
-- DDPMs (Denoising Diffusion Probabilistic Models)
- - The Forward Process
- - The Backward Process
- - Training Loop
-- Improving DDPMs
- - Learning $\Sigma_\theta$
- - Quick Side Note - Where is this derivation coming from?
- - Optimizing The Variance
- - New Learning Rate Scheduler
-- DDIMs (Denoising Diffusion Implicit Models)
-- Classifier Guidance
-- Classifier-Free Guidance
-- My Results
-- Sources
-
 ## A Little History
 
 Interestingly, diffusion models have been around for a while. The earliest paper I could find referencing such a model is from 2015, which can be found [here](https://arxiv.org/abs/1503.03585). The paper showed promising results, but since GANs were starting to get big at the time, I don't think people were looking at other generative models.

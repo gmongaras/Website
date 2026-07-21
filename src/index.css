@@ -54,6 +54,121 @@ html, body, #root {
   @apply inline-flex items-center gap-1 hover:underline decoration-accent/60 underline-offset-4;
 }
 
+.blog-article {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.blog-article h1,
+.blog-article h2,
+.blog-article h3 {
+  color: #ffffff;
+}
+
+.blog-article p,
+.blog-article li,
+.blog-article dt,
+.blog-article dd {
+  color: rgba(255,255,255,0.9);
+  line-height: 1.85;
+}
+
+.blog-article .prose > *:first-child {
+  margin-top: 0;
+}
+
+.article-toc {
+  position: relative;
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  box-shadow: none;
+  padding-right: 1.5rem;
+}
+
+.article-toc::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 2rem;
+  bottom: 2rem;
+  width: 1px;
+
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(var(--accent-rgb), 0.9) 12%,
+    rgba(var(--accent-rgb), 1) 50%,
+    rgba(var(--accent-rgb), 0.9) 88%,
+    transparent
+  );
+
+  box-shadow:
+    0 0 3px rgba(var(--accent-rgb), 1),
+    0 0 8px rgba(var(--accent-rgb), 0.75),
+    0 0 16px rgba(var(--accent-rgb), 0.35);
+
+  border-radius: 999px;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.toc-link {
+  position: relative;
+  color: rgba(255,255,255,0.78);
+  transition: color 250ms ease, transform 250ms ease;
+}
+
+.toc-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: width 300ms ease;
+}
+
+.toc-link:hover {
+  color: white;
+  transform: translateX(2px);
+}
+
+.toc-link.active {
+  color: white;
+  font-weight: 600;
+}
+
+.toc-link.active::after {
+  width: 100%;
+}
+
+.article-toc a {
+  color: rgba(255,255,255,0.75);
+}
+
+.article-toc a:hover {
+  color: white;
+}
+
+.katex-display {
+  margin: 1.75rem auto;
+}
+
+.katex {
+  font-size: 1rem;
+}
+
+.katex .katex-html {
+  font-size: inherit;
+}
+
+.katex .base {
+  line-height: 1.4;
+}
+
 /* Hide scrollbars */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */

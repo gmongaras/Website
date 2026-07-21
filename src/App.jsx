@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
+import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle, useContext, useCallback } from "react"
 import { createPortal } from "react-dom"
 import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
@@ -398,13 +398,21 @@ const Header = ({ onMobileMenuToggle }) => {
 
   // Helper function to handle navigation
   const handleNavClick = (href) => {
-    if (href.startsWith('#')) {
-      // If we're viewing a blog post (hash starts with #blog/), navigate to homepage first, then scroll to section
-      if (window.location.hash.startsWith('#blog/')) {
-        // Navigate to homepage with the target hash
-        window.location.href = `/${href}`
+    if (href.startsWith('#blog/')) {
+      if (window.location.hash === href) {
+        // Already on the same blog post, scroll to the top of the blog
+        window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
-        // If we're on the homepage, just scroll to the section
+        window.location.hash = href
+      }
+      return
+    }
+
+    if (href.startsWith('#')) {
+      // If we're viewing a blog post, navigate to homepage first, then scroll to section
+      if (window.location.hash.startsWith('#blog/')) {
+        window.location.hash = href
+      } else {
         const element = document.querySelector(href)
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' })
@@ -469,7 +477,7 @@ const Header = ({ onMobileMenuToggle }) => {
     { href: "#publications", label: "Publications", icon: BookOpen },
     { href: "#media", label: "Media", icon: BookOpen },
     { href: "#blogs", label: "Blogs", icon: BookAudio },
-    { href: "#random", label: "Random", icon: Cpu },
+    // { href: "#random", label: "Random", icon: Cpu },
   ]
 
   return (
@@ -545,6 +553,10 @@ const Header = ({ onMobileMenuToggle }) => {
                         <a
                           key={post.slug}
                           href={`#blog/${post.slug}`}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            handleNavClick(`#blog/${post.slug}`)
+                          }}
                           className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm"
                         >
                           <div className="font-medium text-white/90 truncate">{post.title}</div>
@@ -1397,6 +1409,194 @@ const escapeHtml = (text) => {
     .replace(/'/g, '&#39;')
 }
 
+const createHeadingId = (text) => {
+  return text
+    .replace(/<[^>]+>/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+}
+
+const parseBlogHash = (hash) => {
+  if (!hash.startsWith('#blog/')) {
+    return null
+  }
+
+  const rawValue = hash.slice('#blog/'.length)
+  const [slugPart, ...brokenSection] = rawValue.split('#')
+  const [slug, ...sectionParts] = slugPart.split('/')
+  const section = sectionParts.length > 0
+    ? sectionParts.join('/')
+    : brokenSection.length > 0
+      ? brokenSection.join('#')
+      : null
+
+  return {
+    slug,
+    section: section || null
+  }
+}
+
+const extractHeadings = (content) => {
+  const headings = []
+  const lines = content.split(/\r?\n/)
+
+  for (const line of lines) {
+    const match = line.match(/^(#{2,3})\s+(.+)$/)
+    if (match) {
+      headings.push({
+        level: match[1].length,
+        text: match[2].trim(),
+        slug: createHeadingId(match[2].trim())
+      })
+    }
+  }
+
+  return headings
+}
+
+const buildTocTree = (headings) => {
+  const tree = []
+  let currentSection = null
+
+  headings.forEach((heading) => {
+    if (heading.level === 2) {
+      currentSection = { ...heading, children: [] }
+      tree.push(currentSection)
+    } else if (heading.level === 3 && currentSection) {
+      currentSection.children.push(heading)
+    }
+  })
+
+  return tree
+}
+
+const ArticleToc = ({ headings, postSlug, onNavigateSection }) => {
+  const tocItems = React.useMemo(() => buildTocTree(headings), [headings])
+  const [openSections, setOpenSections] = useState({})
+  const [activeSection, setActiveSection] = useState(null)
+
+  useEffect(() => {
+    setOpenSections(tocItems.reduce((acc, item) => ({ ...acc, [item.slug]: true }), {}))
+  }, [tocItems])
+
+  useEffect(() => {
+    const ids = tocItems.flatMap((item) => [item.slug, ...item.children.map((child) => child.slug)])
+    if (!ids.length) return
+
+    const handleIntersect = (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+
+      if (visible.length > 0) {
+        setActiveSection(visible[0].target.id)
+      }
+    }
+
+    const observer = new IntersectionObserver(handleIntersect, {
+      root: null,
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0.1,
+    })
+
+    ids.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [tocItems])
+
+  const toggleSection = (slug) => {
+    setOpenSections((prev) => ({ ...prev, [slug]: !prev[slug] }))
+  }
+
+  if (!tocItems.length) {
+    return null
+  }
+
+  return (
+    <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
+      <div className="article-toc p-4">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/50">On this page</p>
+            <h2 className="mt-2 text-xl font-semibold text-white">Contents</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpenSections((prev) => {
+              const allOpen = Object.values(prev).every(Boolean)
+              return Object.fromEntries(Object.entries(prev).map(([slug]) => [slug, !allOpen]))
+            })}
+            className="text-xs text-white/60 hover:text-white"
+          >
+            Toggle
+          </button>
+        </div>
+
+        <nav className="space-y-3 text-sm text-white/75">
+          {tocItems.map((item) => (
+            <div key={item.slug}>
+              <div className="flex w-full items-center justify-between gap-3">
+                <a
+                  href={`#blog/${postSlug}/${item.slug}`}
+                  className={`toc-link block text-left ${activeSection === item.slug ? 'active' : ''}`}
+                  onClick={(event) => {
+                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                      return
+                    }
+                    event.preventDefault()
+                    setActiveSection(item.slug)
+                    onNavigateSection && onNavigateSection(item.slug)
+                  }}
+                  aria-current={activeSection === item.slug ? 'location' : undefined}
+                >
+                  {item.text}
+                </a>
+                {item.children.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(item.slug)}
+                    className="text-white/60 hover:text-white"
+                    aria-expanded={openSections[item.slug]}
+                  >
+                    <ChevronDown className={`w-4 h-4 transition-transform ${openSections[item.slug] ? 'rotate-180' : ''}`} />
+                  </button>
+                ) : null}
+              </div>
+
+              {item.children.length > 0 && openSections[item.slug] && (
+                <ul className="mt-2 space-y-2 pl-4 text-white/70">
+                  {item.children.map((child) => (
+                    <li key={child.slug}>
+                      <a
+                        href={`#blog/${postSlug}/${child.slug}`}
+                        className={`toc-link block ${activeSection === child.slug ? 'active' : ''}`}
+                        onClick={(event) => {
+                          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                            return
+                          }
+                          event.preventDefault()
+                          setActiveSection(child.slug)
+                          onNavigateSection && onNavigateSection(child.slug)
+                        }}
+                        aria-current={activeSection === child.slug ? 'location' : undefined}
+                      >{child.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </nav>
+      </div>
+    </aside>
+  )
+}
+
 // Individual renderer components
 const HeaderRenderer = ({ level, content }) => {
   const classes = {
@@ -1405,6 +1605,8 @@ const HeaderRenderer = ({ level, content }) => {
     3: "text-xl font-bold mt-8 mb-4 text-white"
   }
   
+  const headingId = createHeadingId(content)
+
   // Process LaTeX in header content
   const processedContent = escapeHtml(content)
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
@@ -1432,6 +1634,7 @@ const HeaderRenderer = ({ level, content }) => {
   const Tag = `h${level}`
   return (
     <Tag 
+      id={headingId}
       className={classes[level]}
       dangerouslySetInnerHTML={{ __html: processedContent }}
     />
@@ -1606,12 +1809,38 @@ const ListRenderer = ({ items, ordered = false }) => {
   return parseNestedList(items, ordered)
 }
 
+const BlogImageLoaderContext = React.createContext(null)
+
 // LazyImage component with intersection observer
 const LazyImage = ({ src, alt, className, onError, ...props }) => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(false)
   const [hasError, setHasError] = useState(false)
   const imgRef = useRef(null)
+  const registry = useContext(BlogImageLoaderContext)
+  const loadPromiseRef = useRef(null)
+  const loadResolverRef = useRef(null)
+
+  const loadImage = useCallback(() => {
+    if (isInView) {
+      return Promise.resolve()
+    }
+
+    setIsInView(true)
+
+    if (!loadPromiseRef.current) {
+      loadPromiseRef.current = new Promise((resolve) => {
+        loadResolverRef.current = resolve
+      })
+      if (isLoaded && loadResolverRef.current) {
+        loadResolverRef.current()
+        loadResolverRef.current = null
+        loadPromiseRef.current = null
+      }
+    }
+
+    return loadPromiseRef.current
+  }, [isInView, isLoaded])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1633,6 +1862,25 @@ const LazyImage = ({ src, alt, className, onError, ...props }) => {
 
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    if (registry && imgRef.current) {
+      const item = {
+        wrapper: imgRef.current,
+        load: loadImage
+      }
+      registry.registerImage(item)
+      return () => registry.unregisterImage(imgRef.current)
+    }
+  }, [registry, loadImage])
+
+  useEffect(() => {
+    if (isLoaded && loadResolverRef.current) {
+      loadResolverRef.current()
+      loadResolverRef.current = null
+      loadPromiseRef.current = null
+    }
+  }, [isLoaded])
 
   const handleError = (e) => {
     setHasError(true)
@@ -1822,7 +2070,11 @@ const LatexRenderer = ({ content }) => {
   return <ContentRenderer content={content} />
 }
 
-const BlogPost = ({ post }) => {
+const BlogPost = ({ post, initialSection }) => {
+  const [pendingSection, setPendingSection] = useState(initialSection)
+  const [hasScrolledSection, setHasScrolledSection] = useState(false)
+  const [imageCount, setImageCount] = useState(0)
+
   if (!post) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1866,6 +2118,85 @@ const BlogPost = ({ post }) => {
     "wordCount": post.body.split(' ').length
   }
 
+  const imageRegistryRef = useRef([])
+
+  const registerImage = useCallback((entry) => {
+    imageRegistryRef.current = [...imageRegistryRef.current, entry]
+    setImageCount((count) => count + 1)
+  }, [])
+
+  const unregisterImage = useCallback((wrapper) => {
+    imageRegistryRef.current = imageRegistryRef.current.filter((entry) => entry.wrapper !== wrapper)
+    setImageCount((count) => Math.max(0, count - 1))
+  }, [])
+
+  const loadImagesBeforeSection = useCallback(async (sectionId) => {
+    const targetElement = document.getElementById(sectionId)
+    if (!targetElement) return
+
+    const targetTop = targetElement.getBoundingClientRect().top + window.scrollY
+
+    const imageLoads = imageRegistryRef.current
+      .filter((item) => {
+        if (!item.wrapper) return false
+        const rect = item.wrapper.getBoundingClientRect()
+        const top = rect.top + window.scrollY
+        return top <= targetTop
+      })
+      .map((item) => item.load())
+
+    await Promise.all(imageLoads)
+  }, [])
+
+  const tryScrollPendingSection = useCallback(async () => {
+    if (!pendingSection || hasScrolledSection) return
+
+    const sectionEl = document.getElementById(pendingSection)
+    if (!sectionEl) return
+
+    await loadImagesBeforeSection(pendingSection)
+    sectionEl.scrollIntoView({ behavior: 'smooth' })
+    setHasScrolledSection(true)
+  }, [pendingSection, hasScrolledSection, loadImagesBeforeSection])
+
+  useEffect(() => {
+    setPendingSection(initialSection)
+    setHasScrolledSection(false)
+  }, [initialSection])
+
+  useEffect(() => {
+    if (!initialSection) {
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }
+  }, [post.slug, initialSection])
+
+  useEffect(() => {
+    tryScrollPendingSection()
+  }, [tryScrollPendingSection, imageCount])
+
+  useEffect(() => {
+    if (!pendingSection || hasScrolledSection) return
+    const timer = setTimeout(() => {
+      tryScrollPendingSection()
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [pendingSection, tryScrollPendingSection, hasScrolledSection])
+
+  const handleNavigateSection = useCallback(async (sectionId) => {
+    await loadImagesBeforeSection(sectionId)
+
+    const newHash = `#blog/${post.slug}/${sectionId}`
+    history.replaceState(null, '', newHash)
+
+    const sectionEl = document.getElementById(sectionId)
+    if (sectionEl) {
+      sectionEl.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [loadImagesBeforeSection, post.slug])
+
+  const contentHeadings = React.useMemo(() => extractHeadings(post.body), [post.body])
+  const subtitle = post.subtitle || post.excerpt || ''
+
   return (
     <div className="min-h-screen">
       <SEO 
@@ -1878,38 +2209,44 @@ const BlogPost = ({ post }) => {
       />
       <Header />
       <div className="section py-16 sm:py-24">
-        <div className="max-w-4xl mx-auto">
-          {/* Back button */}
-          <a 
-            href="/#blogs" 
-            className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Blogs
-          </a>
-
-          {/* Blog post content */}
-          <article className="prose prose-invert max-w-none">
-            <header className="mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-4">{post.title}</h1>
-              <div className="flex items-center gap-4 text-sm text-white/60 mb-6">
-                <time>{new Date(post.date).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</time>
-                <div className="flex gap-2">
-                  {post.tags.map((tag, i) => (
-                    <span key={i} className="chip text-xs">{tag}</span>
-                  ))}
+        <div className="max-w-7xl mx-auto grid gap-8 lg:grid-cols-[260px_minmax(0,1024px)]">
+          <ArticleToc headings={contentHeadings} postSlug={post.slug} onNavigateSection={handleNavigateSection} />
+          <div>
+            <article className="prose prose-invert max-w-5xl mx-auto">
+              <header className="mb-10">
+                <h1 className="text-3xl sm:text-4xl font-bold mb-4">{post.title}</h1>
+                {subtitle ? <p className="max-w-3xl text-white/70 mb-6">{subtitle}</p> : null}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-white/60 mb-6">
+                  <time>{new Date(post.date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}</time>
+                  <div className="flex gap-2 flex-wrap">
+                    {post.tags.map((tag, i) => (
+                      <span key={i} className="chip text-xs">{tag}</span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </header>
+                {post.authors?.length ? (
+                  <div className="mb-4 text-sm text-white/70">
+                    <span className="font-semibold text-white">Authors:</span> {post.authors.join(', ')}
+                  </div>
+                ) : null}
+                {post.affiliations?.length ? (
+                  <div className="mb-6 text-sm text-white/70">
+                    <span className="font-semibold text-white">Affiliations:</span> {post.affiliations.join(', ')}
+                  </div>
+                ) : null}
+              </header>
 
-            <div className="prose prose-invert max-w-none">
-              <LatexRenderer content={post.body} />
-            </div>
-          </article>
+              <div className="prose prose-invert max-w-none">
+                <BlogImageLoaderContext.Provider value={{ registerImage, unregisterImage }}>
+                  <LatexRenderer content={post.body} />
+                </BlogImageLoaderContext.Provider>
+              </div>
+            </article>
+          </div>
         </div>
       </div>
     </div>
@@ -2553,43 +2890,41 @@ const Footer = () => (
 export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
-  // Initialize state based on current hash to prevent flash
   const getInitialState = () => {
     const hash = window.location.hash
-    if (hash.startsWith('#blog/')) {
-      const slug = hash.replace('#blog/', '')
-      const post = posts.find(p => p.slug === slug)
-      return { view: 'blog', post: post }
+    const parsed = parseBlogHash(hash)
+    if (parsed && parsed.slug) {
+      const post = posts.find(p => p.slug === parsed.slug)
+      return { view: 'blog', post, section: parsed.section }
     }
-    return { view: 'home', post: null }
+    return { view: 'home', post: null, section: null }
   }
   
   const initialState = getInitialState()
   const [currentView, setCurrentView] = useState(initialState.view)
   const [currentPost, setCurrentPost] = useState(initialState.post)
+  const [currentSection, setCurrentSection] = useState(initialState.section)
 
   // Handle hash-based routing for blog posts
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash
-      if (hash.startsWith('#blog/')) {
-        const slug = hash.replace('#blog/', '')
-        const post = posts.find(p => p.slug === slug)
+      const parsed = parseBlogHash(hash)
+      if (parsed && parsed.slug) {
+        const post = posts.find(p => p.slug === parsed.slug)
         if (post) {
           setCurrentPost(post)
           setCurrentView('blog')
-          // Scroll to top when navigating to a blog post
-          // Use setTimeout to ensure DOM has updated
-          setTimeout(() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' })
-          }, 100)
-        } else {
-          setCurrentView('home')
-          setCurrentPost(null)
+          setCurrentSection(parsed.section)
+          return
         }
+        setCurrentView('home')
+        setCurrentPost(null)
+        setCurrentSection(null)
       } else {
         setCurrentView('home')
         setCurrentPost(null)
+        setCurrentSection(null)
         // If we're on the homepage and there's a hash, scroll to that section
         if (hash && hash !== '#') {
           setTimeout(() => {
@@ -2606,11 +2941,9 @@ export default function App() {
     // since we've already set the initial state correctly
     const handleInitialLoad = () => {
       const hash = window.location.hash
-      if (hash.startsWith('#blog/')) {
-        // Already set correctly in initial state, just ensure scroll to top
-        setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' })
-        }, 100)
+      const parsed = parseBlogHash(hash)
+      if (parsed && parsed.slug) {
+        setCurrentSection(parsed.section)
       } else if (hash && hash !== '#') {
         // If we're on the homepage with a hash, scroll to that section
         setTimeout(() => {
@@ -2632,7 +2965,7 @@ export default function App() {
 
   // If viewing a blog post, render the blog post component
   if (currentView === 'blog') {
-    return <BlogPost post={currentPost} />
+    return <BlogPost post={currentPost} initialSection={currentSection} />
   }
 
   // Otherwise render the main homepage
@@ -2655,7 +2988,7 @@ export default function App() {
           <Publications />
           <Media />
           <Blogs />
-          <RandomCreations />
+          {/* <RandomCreations /> */}
           <ContactShowcase />
         </main>
         <Footer />
