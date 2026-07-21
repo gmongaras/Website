@@ -1472,10 +1472,10 @@ const buildTocTree = (headings) => {
   return tree
 }
 
-const ArticleToc = ({ headings, postSlug, onNavigateSection }) => {
+const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) => {
   const tocItems = React.useMemo(() => buildTocTree(headings), [headings])
   const [openSections, setOpenSections] = useState({})
-  const [activeSection, setActiveSection] = useState(null)
+  const [activeSection, setActiveSection] = useState(initialSection)
 
   useEffect(() => {
     setOpenSections(tocItems.reduce((acc, item) => ({ ...acc, [item.slug]: true }), {}))
@@ -2210,7 +2210,7 @@ const BlogPost = ({ post, initialSection }) => {
       <Header />
       <div className="section py-16 sm:py-24">
         <div className="max-w-7xl mx-auto grid gap-8 lg:grid-cols-[260px_minmax(0,1024px)]">
-          <ArticleToc headings={contentHeadings} postSlug={post.slug} onNavigateSection={handleNavigateSection} />
+          <ArticleToc headings={contentHeadings} postSlug={post.slug} onNavigateSection={handleNavigateSection} initialSection={initialSection} />
           <div>
             <article className="prose prose-invert max-w-5xl mx-auto">
               <header className="mb-10">
