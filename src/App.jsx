@@ -11,6 +11,10 @@ import SEO from "./components/SEO"
 import { motion, AnimatePresence } from "framer-motion"
 import 'katex/dist/katex.min.css'
 import katex from 'katex'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 
 
 const TypingAnimation = () => {
@@ -2019,57 +2023,62 @@ const TextRenderer = ({ content }) => {
   )
 }
 
-// Main content renderer with memoization
-const ContentRenderer = React.memo(({ content }) => {
-  const tokens = React.useMemo(() => tokenizeContent(content), [content])
-  
-  return (
-    <div>
-      {tokens.map((token, index) => {
-        switch (token.type) {
-          case TOKEN_TYPES.HEADER_1:
-            return <HeaderRenderer key={index} level={1} content={token.content} />
-          case TOKEN_TYPES.HEADER_2:
-            return <HeaderRenderer key={index} level={2} content={token.content} />
-          case TOKEN_TYPES.HEADER_3:
-            return <HeaderRenderer key={index} level={3} content={token.content} />
-          case TOKEN_TYPES.ORDERED_LIST:
-            return <ListRenderer key={index} items={token.content} ordered={true} />
-          case TOKEN_TYPES.UNORDERED_LIST:
-            return <ListRenderer key={index} items={token.content} ordered={false} />
-          case TOKEN_TYPES.IMAGE:
-            return (
-              <ImageRenderer 
-                key={index} 
-                alt={token.content.alt} 
-                src={token.content.src} 
-                caption={token.content.caption} 
-              />
-            )
-          case TOKEN_TYPES.CODE_BLOCK:
-            return (
-              <CodeBlockRenderer 
-                key={index} 
-                code={token.content.code} 
-                language={token.content.language} 
-              />
-            )
-          case TOKEN_TYPES.YOUTUBE:
-            return (
-              <YouTubeRenderer 
-                key={index} 
-                videoId={token.content.videoId} 
-              />
-            )
-          case TOKEN_TYPES.TEXT:
-            return <TextRenderer key={index} content={token.content} />
-          default:
-            return null
-        }
-      })}
-    </div>
+const normalizeLegacyMarkdown = (content) => {
+  const withCodeBlocks = content.replace(
+    /^\{\{code\(([^)]*)\)\}\}\r?\n([\s\S]*?)^\{\{code\}\}$/gm,
+    (_, language, code) => `\n\`\`\`${language.trim() || 'text'}\n${code}\n\`\`\`\n`
   )
-})
+
+  return withCodeBlocks.replace(
+    /^\{\{youtube\(([^)]+)\)\}\}$/gm,
+    (_, url) => `\n\`\`\`youtube\n${url}\n\`\`\`\n`
+  )
+}
+
+const MarkdownImage = ({ src, alt, title }) => (
+  <ImageRenderer alt={alt || ''} src={src} caption={title} />
+)
+
+const MarkdownHeading = ({ level, children }) => {
+  const headingText = React.Children.toArray(children)
+    .filter((child) => typeof child === 'string')
+    .join('')
+  const Tag = `h${level}`
+
+  return <Tag id={createHeadingId(headingText)}>{children}</Tag>
+}
+
+const MarkdownCode = ({ className, children, inline }) => {
+  const language = className?.replace('language-', '') || 'text'
+  const code = String(children).replace(/\n$/, '')
+
+  if (inline) {
+    return <code>{children}</code>
+  }
+
+  if (language === 'youtube') {
+    const videoId = code.match(/^[a-zA-Z0-9_-]{11}$/)?.[0]
+    return videoId ? <YouTubeRenderer videoId={videoId} /> : <code>{children}</code>
+  }
+
+  return <CodeBlockRenderer code={code} language={language} />
+}
+
+const ContentRenderer = React.memo(({ content }) => (
+  <ReactMarkdown
+    remarkPlugins={[remarkGfm, remarkMath]}
+    rehypePlugins={[rehypeKatex]}
+    components={{
+      img: MarkdownImage,
+      h1: (props) => <MarkdownHeading level={1} {...props} />,
+      h2: (props) => <MarkdownHeading level={2} {...props} />,
+      h3: (props) => <MarkdownHeading level={3} {...props} />,
+      code: MarkdownCode,
+    }}
+  >
+    {normalizeLegacyMarkdown(content)}
+  </ReactMarkdown>
+))
 
 // Main LaTeX renderer component
 const LatexRenderer = ({ content }) => {
