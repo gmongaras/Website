@@ -1242,7 +1242,7 @@ const TOKEN_TYPES = {
 // Tokenizer - converts markdown text into structured tokens
 const tokenizeContent = (text) => {
   const tokens = []
-  const lines = text.split(/(?<!\\)\n/)
+  const lines = text.split(/\r?\n/)
   let i = 0
 
   while (i < lines.length) {
@@ -1378,9 +1378,13 @@ const tokenizeContent = (text) => {
       }
       i-- // Back up one since we'll increment at end of loop
     }
-    // Regular text
+    // Regular text, including markdown soft line breaks marked with a trailing backslash
     else if (line.trim()) {
-      tokens.push({ type: TOKEN_TYPES.TEXT, content: line })
+      let content = line
+      while (content.endsWith('\\') && i + 1 < lines.length) {
+        content = `${content.slice(0, -1)}\n${lines[++i]}`
+      }
+      tokens.push({ type: TOKEN_TYPES.TEXT, content })
     } else {
       // Empty line - only add if it's not immediately after an image, header, or YouTube video
       const prevToken = tokens[tokens.length - 1]
@@ -1979,6 +1983,8 @@ const TextRenderer = ({ content }) => {
   
   // Process inline formatting
   const processedContent = escapeHtml(content)
+    // A trailing backslash is markdown's soft-break marker, not visible content.
+    .replace(/\\(?=\n|$)/g, '')
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -2003,7 +2009,7 @@ const TextRenderer = ({ content }) => {
     // Handle double newlines as paragraph breaks with more spacing
     .replace(/\n\n+/g, '')
     // Handle single newlines as line breaks
-    .replace(/\n/g, '')
+    .replace(/\n/g, '<br />')
   
   return (
     <div 
