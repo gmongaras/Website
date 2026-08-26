@@ -15,6 +15,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import { blogImageDimensions } from './blogImageDimensions'
 
 
 const TypingAnimation = () => {
@@ -1493,28 +1494,39 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
     const ids = tocItems.flatMap((item) => [item.slug, ...item.children.map((child) => child.slug)])
     if (!ids.length) return
 
-    const handleIntersect = (entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+    let frameId = null
 
-      if (visible.length > 0) {
-        setActiveSection(visible[0].target.id)
+    const updateActiveSection = () => {
+      frameId = null
+      const headingsInView = ids
+        .map((id) => document.getElementById(id))
+        .filter(Boolean)
+
+      if (!headingsInView.length) return
+
+      const activationLine = Math.max(96, window.innerHeight * 0.2)
+      const currentHeading = headingsInView
+        .filter((heading) => heading.getBoundingClientRect().top <= activationLine)
+        .at(-1)
+
+      setActiveSection(currentHeading?.id || headingsInView[0].id)
+    }
+
+    const handleScroll = () => {
+      if (frameId === null) {
+        frameId = requestAnimationFrame(updateActiveSection)
       }
     }
 
-    const observer = new IntersectionObserver(handleIntersect, {
-      root: null,
-      rootMargin: '-20% 0px -70% 0px',
-      threshold: 0.1,
-    })
+    updateActiveSection()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleScroll, { passive: true })
 
-    ids.forEach((id) => {
-      const el = document.getElementById(id)
-      if (el) observer.observe(el)
-    })
-
-    return () => observer.disconnect()
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+      if (frameId !== null) cancelAnimationFrame(frameId)
+    }
   }, [tocItems])
 
   const toggleSection = (slug) => {
@@ -1817,38 +1829,12 @@ const ListRenderer = ({ items, ordered = false }) => {
   return parseNestedList(items, ordered)
 }
 
-const BlogImageLoaderContext = React.createContext(null)
-
-// LazyImage component with intersection observer
-const LazyImage = ({ src, alt, className, onError, ...props }) => {
+// Let the browser manage lazy loading while reserving space for each image.
+const LazyImage = ({ src, alt, width, height, className, onError, ...props }) => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(false)
   const [hasError, setHasError] = useState(false)
-  const imgRef = useRef(null)
-  const registry = useContext(BlogImageLoaderContext)
-  const loadPromiseRef = useRef(null)
-  const loadResolverRef = useRef(null)
-
-  const loadImage = useCallback(() => {
-    if (isInView) {
-      return Promise.resolve()
-    }
-
-    setIsInView(true)
-
-    if (!loadPromiseRef.current) {
-      loadPromiseRef.current = new Promise((resolve) => {
-        loadResolverRef.current = resolve
-      })
-      if (isLoaded && loadResolverRef.current) {
-        loadResolverRef.current()
-        loadResolverRef.current = null
-        loadPromiseRef.current = null
-      }
-    }
-
-    return loadPromiseRef.current
-  }, [isInView, isLoaded])
+  const wrapperRef = useRef(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1858,37 +1844,12 @@ const LazyImage = ({ src, alt, className, onError, ...props }) => {
           observer.disconnect()
         }
       },
-      {
-        rootMargin: '50px', // Start loading 50px before the image comes into view
-        threshold: 0.1
-      }
+      { rootMargin: '300px 0px', threshold: 0.01 },
     )
 
-    if (imgRef.current) {
-      observer.observe(imgRef.current)
-    }
-
+    if (wrapperRef.current) observer.observe(wrapperRef.current)
     return () => observer.disconnect()
   }, [])
-
-  useEffect(() => {
-    if (registry && imgRef.current) {
-      const item = {
-        wrapper: imgRef.current,
-        load: loadImage
-      }
-      registry.registerImage(item)
-      return () => registry.unregisterImage(imgRef.current)
-    }
-  }, [registry, loadImage])
-
-  useEffect(() => {
-    if (isLoaded && loadResolverRef.current) {
-      loadResolverRef.current()
-      loadResolverRef.current = null
-      loadPromiseRef.current = null
-    }
-  }, [isLoaded])
 
   const handleError = (e) => {
     setHasError(true)
@@ -1898,14 +1859,22 @@ const LazyImage = ({ src, alt, className, onError, ...props }) => {
   }
 
   return (
-    <div ref={imgRef} className={className}>
+    <div
+      ref={wrapperRef}
+      className="relative w-full"
+      style={{
+        aspectRatio: width && height ? `${width} / ${height}` : '16 / 9',
+      }}
+    >
       {isInView && !hasError && (
         <img
           src={src}
           alt={alt}
+          loading="lazy"
+          decoding="async"
           onLoad={() => setIsLoaded(true)}
           onError={handleError}
-          className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`w-full h-full object-contain transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className || ''}`}
           {...props}
         />
       )}
@@ -1919,10 +1888,10 @@ const LazyImage = ({ src, alt, className, onError, ...props }) => {
 }
 
 const ImageRenderer = ({ alt, src, caption }) => {
+  const dimensions = blogImageDimensions[src]
   // Process LaTeX in caption content
   const processedCaption = caption ? escapeHtml(caption)
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="underline">$1</a>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 py-0.5 rounded text-sm">$1</code>')
     // Process LaTeX inline
@@ -1945,10 +1914,12 @@ const ImageRenderer = ({ alt, src, caption }) => {
 
   return (
     <div className="mb-4 my-4 text-center">
-      <div className="group relative inline-block overflow-visible rounded-lg p-2">
+      <div className="group relative block w-full overflow-visible rounded-lg p-2">
         <LazyImage 
           src={src} 
           alt={alt} 
+          width={dimensions?.width}
+          height={dimensions?.height}
           className="max-w-full h-auto rounded-lg mx-auto shadow-lg transition-transform duration-300 ease-out group-hover:scale-105" 
         />
       </div>
@@ -2039,25 +2010,47 @@ const MarkdownImage = ({ src, alt, title }) => (
   <ImageRenderer alt={alt || ''} src={src} caption={title} />
 )
 
+const MarkdownParagraph = ({ children }) => (
+  React.Children.count(children) === 1 && React.isValidElement(children) && children.type === MarkdownImage
+    ? children
+    : <p className="mb-4 text-white/90 leading-relaxed">{children}</p>
+)
+
 const MarkdownHeading = ({ level, children }) => {
   const headingText = React.Children.toArray(children)
-    .filter((child) => typeof child === 'string')
+    .map((child) => typeof child === 'string' ? child : '')
     .join('')
   const Tag = `h${level}`
+  const classes = {
+    1: 'text-3xl font-bold mt-8 mb-6 text-white',
+    2: 'text-2xl font-bold mt-8 mb-4 text-white',
+    3: 'text-xl font-bold mt-8 mb-4 text-white',
+  }
 
-  return <Tag id={createHeadingId(headingText)}>{children}</Tag>
+  return <Tag id={createHeadingId(headingText)} className={classes[level]}>{children}</Tag>
+}
+
+const getYoutubeVideoId = (url) => {
+  if (url.includes('youtube.com/watch?v=')) {
+    return url.match(/[?&]v=([a-zA-Z0-9_-]{11})/)?.[1]
+  }
+  if (url.includes('youtu.be/')) {
+    return url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)?.[1]
+  }
+  return url.match(/^[a-zA-Z0-9_-]{11}$/)?.[0]
 }
 
 const MarkdownCode = ({ className, children, inline }) => {
   const language = className?.replace('language-', '') || 'text'
-  const code = String(children).replace(/\n$/, '')
+  const rawCode = String(children)
+  const code = rawCode.replace(/\n$/, '')
 
-  if (inline) {
+  if (inline || (!className && !rawCode.includes('\n'))) {
     return <code>{children}</code>
   }
 
   if (language === 'youtube') {
-    const videoId = code.match(/^[a-zA-Z0-9_-]{11}$/)?.[0]
+    const videoId = getYoutubeVideoId(code)
     return videoId ? <YouTubeRenderer videoId={videoId} /> : <code>{children}</code>
   }
 
@@ -2065,19 +2058,27 @@ const MarkdownCode = ({ className, children, inline }) => {
 }
 
 const ContentRenderer = React.memo(({ content }) => (
-  <ReactMarkdown
-    remarkPlugins={[remarkGfm, remarkMath]}
-    rehypePlugins={[rehypeKatex]}
-    components={{
-      img: MarkdownImage,
-      h1: (props) => <MarkdownHeading level={1} {...props} />,
-      h2: (props) => <MarkdownHeading level={2} {...props} />,
-      h3: (props) => <MarkdownHeading level={3} {...props} />,
-      code: MarkdownCode,
-    }}
-  >
-    {normalizeLegacyMarkdown(content)}
-  </ReactMarkdown>
+  <div className="blog-markdown text-white/90">
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+      components={{
+        p: MarkdownParagraph,
+        img: MarkdownImage,
+        h1: (props) => <MarkdownHeading level={1} {...props} />,
+        h2: (props) => <MarkdownHeading level={2} {...props} />,
+        h3: (props) => <MarkdownHeading level={3} {...props} />,
+        ul: ({ children }) => <ul className="list-disc list-outside mb-4 space-y-1 ml-6">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal list-outside mb-4 space-y-1 ml-6">{children}</ol>,
+        li: ({ children }) => <li className="mb-1 pl-2 leading-relaxed">{children}</li>,
+        blockquote: ({ children }) => <blockquote className="border-l-4 border-accent/50 pl-4 my-4 text-white/80">{children}</blockquote>,
+        pre: ({ children }) => <>{children}</>,
+        code: MarkdownCode,
+      }}
+    >
+      {normalizeLegacyMarkdown(content)}
+    </ReactMarkdown>
+  </div>
 ))
 
 // Main LaTeX renderer component
@@ -2088,7 +2089,6 @@ const LatexRenderer = ({ content }) => {
 const BlogPost = ({ post, initialSection }) => {
   const [pendingSection, setPendingSection] = useState(initialSection)
   const [hasScrolledSection, setHasScrolledSection] = useState(false)
-  const [imageCount, setImageCount] = useState(0)
 
   if (!post) {
     return (
@@ -2133,46 +2133,15 @@ const BlogPost = ({ post, initialSection }) => {
     "wordCount": post.body.split(' ').length
   }
 
-  const imageRegistryRef = useRef([])
-
-  const registerImage = useCallback((entry) => {
-    imageRegistryRef.current = [...imageRegistryRef.current, entry]
-    setImageCount((count) => count + 1)
-  }, [])
-
-  const unregisterImage = useCallback((wrapper) => {
-    imageRegistryRef.current = imageRegistryRef.current.filter((entry) => entry.wrapper !== wrapper)
-    setImageCount((count) => Math.max(0, count - 1))
-  }, [])
-
-  const loadImagesBeforeSection = useCallback(async (sectionId) => {
-    const targetElement = document.getElementById(sectionId)
-    if (!targetElement) return
-
-    const targetTop = targetElement.getBoundingClientRect().top + window.scrollY
-
-    const imageLoads = imageRegistryRef.current
-      .filter((item) => {
-        if (!item.wrapper) return false
-        const rect = item.wrapper.getBoundingClientRect()
-        const top = rect.top + window.scrollY
-        return top <= targetTop
-      })
-      .map((item) => item.load())
-
-    await Promise.all(imageLoads)
-  }, [])
-
-  const tryScrollPendingSection = useCallback(async () => {
+  const tryScrollPendingSection = useCallback(() => {
     if (!pendingSection || hasScrolledSection) return
 
     const sectionEl = document.getElementById(pendingSection)
     if (!sectionEl) return
 
-    await loadImagesBeforeSection(pendingSection)
-    sectionEl.scrollIntoView({ behavior: 'smooth' })
+    sectionEl.scrollIntoView({ behavior: 'auto' })
     setHasScrolledSection(true)
-  }, [pendingSection, hasScrolledSection, loadImagesBeforeSection])
+  }, [pendingSection, hasScrolledSection])
 
   useEffect(() => {
     setPendingSection(initialSection)
@@ -2187,27 +2156,17 @@ const BlogPost = ({ post, initialSection }) => {
 
   useEffect(() => {
     tryScrollPendingSection()
-  }, [tryScrollPendingSection, imageCount])
+  }, [tryScrollPendingSection])
 
-  useEffect(() => {
-    if (!pendingSection || hasScrolledSection) return
-    const timer = setTimeout(() => {
-      tryScrollPendingSection()
-    }, 250)
-    return () => clearTimeout(timer)
-  }, [pendingSection, tryScrollPendingSection, hasScrolledSection])
-
-  const handleNavigateSection = useCallback(async (sectionId) => {
-    await loadImagesBeforeSection(sectionId)
-
+  const handleNavigateSection = useCallback((sectionId) => {
     const newHash = `#blog/${post.slug}/${sectionId}`
     history.replaceState(null, '', newHash)
 
     const sectionEl = document.getElementById(sectionId)
     if (sectionEl) {
-      sectionEl.scrollIntoView({ behavior: 'smooth' })
+      sectionEl.scrollIntoView({ behavior: 'auto' })
     }
-  }, [loadImagesBeforeSection, post.slug])
+  }, [post.slug])
 
   const contentHeadings = React.useMemo(() => extractHeadings(post.body), [post.body])
   const subtitle = post.subtitle || post.excerpt || ''
@@ -2256,9 +2215,7 @@ const BlogPost = ({ post, initialSection }) => {
               </header>
 
               <div className="prose prose-invert max-w-none">
-                <BlogImageLoaderContext.Provider value={{ registerImage, unregisterImage }}>
-                  <LatexRenderer content={post.body} />
-                </BlogImageLoaderContext.Provider>
+                <LatexRenderer content={post.body} />
               </div>
             </article>
           </div>

@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "predev": "npm run generate-image-dimensions",
+    "prebuild": "npm run generate-image-dimensions",
     "preview": "vite preview",
+    "generate-image-dimensions": "node scripts/generateImageDimensions.js",
     "generate-sitemap": "node scripts/generateSitemap.js",
     "generate-og-image": "python scripts/generateOGImage.py"
   },

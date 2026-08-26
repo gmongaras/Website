@@ -1,5 +1,5 @@
-Note :Imported from [medium](https://gmongaras.medium.com/coding-a-virtual-ai-girlfriend-f951e648aa46)
-
+Note: Imported from [medium](https://gmongaras.medium.com/coding-a-virtual-ai-girlfriend-f951e648aa46)
+    
 I always told people I would create an AI girlfriend, but after a few weeks of building a conglomeration of ML models, I finally have one. In this article, I'm going to explain my procedure for creating a virtual girlfriend so that everyone can have one. Don't worry, If you don't want a virtual girlfriend, these methods can be applied to make a boyfriend too.
 
 If you are interested in using Colab to generate your girlfriend/boyfriend you can do so here: [link](https://colab.research.google.com/drive/1Nl5ioIkJdrsE-IoMUNPMsDt-wMi18JLN?usp=sharing)
@@ -35,10 +35,10 @@ openai.api_key = "your key here"
 # Get the model
 models = openai.Model
 # Initial prompt with few-shot learning
-initial_prompt = "The following is a conversation with me and my waifu girlfriend\n\n"\
-        "Me: Hello\nGirlfriend: Hello\n"\
-        "Me: How are you?\nGirlfriend: I am good\n"\
-        "Me: I love you.\n"
+initial_prompt = "The following is a conversation with me and my waifu girlfriend\\n\\n"\\
+        "Me: Hello\\nGirlfriend: Hello\\n"\\
+        "Me: How are you?\\nGirlfriend: I am good\\n"\\
+        "Me: I love you.\\n"
 # API request to GPT using the largest model - davinci-003
 # https://beta.openai.com/docs/api-reference/introduction?lang=python
 output = openai.Completion.create(
@@ -85,7 +85,7 @@ test_model = pipeline('text-generation',model="gmongaras/gpt-anime-sub-1.3B",
 # Used to get a response from the model
 def get_response(input_text):
     return test_model(input_text)[0]["generated_text"][\
-        len(input_text):].split("\n")[0].replace("Girlfriend: ", "")
+        len(input_text):].split("\\n")[0].replace("Girlfriend: ", "")
 print(get_response(initial_prompt))
 {{code}}
 
@@ -154,9 +154,9 @@ def audio_to_text(audio):
     return text
 # Prompt that will be continuously updated
 global prompt
-prompt = "The following is a conversation with me and my waifu girlfriend\n\n"\
-        "Me: Hello\nGirlfriend: Hello\n"\
-        "Me: How are you?\nGirlfriend: I am good\n"
+prompt = "The following is a conversation with me and my waifu girlfriend\\n\\n"\\
+        "Me: Hello\\nGirlfriend: Hello\\n"\\
+        "Me: How are you?\\nGirlfriend: I am good\\n"
 {{code}}
 
 {{code(python)}}
@@ -185,13 +185,13 @@ def handle_audio(audio_pth):
         text = audio_to_text(audio)
         
         # Add the text to the prompt so far
-        prompt += f"Me: {text}\n"
+        prompt += f"Me: {text}\\n"
         
         # Get a response
         resp = get_response(prompt)
         
         # Add the response to the prompt
-        prompt += f"Girlfriend: {resp}\n"
+        prompt += f"Girlfriend: {resp}\\n"
         
         # Ensure audio is unloaded
         try:
@@ -412,3 +412,177 @@ def update_loop():
             # Update the internal vector with the
             # next iteration of the blink cycle
             pose = mover.Move_eyes()
+            
+            # Update the EMA
+            mover.update_EMA(time.time()-frame_start)
+            
+            # Start timer for a single generation
+            frame_start = time.time()
+
+            # Show image
+            yield mover.change_pose(), time_to_blink, error
+        
+        # Reset flag for another blink
+        mover.eye_cycle_end = False
+        
+        # End blink timer
+        time_to_blink = time.time()-timer_start
+        error = abs(mover.total_blink_time_i-time_to_blink)
+        
+        # Blink anywhere between 2 and 7 secods with
+        # a mean around 5 seconds (avg blink wait time)
+        time.sleep(np.clip(np.random.normal(5, 1, size=1)[0], 2, 7))
+        
+    mover.pose *= 0
+    yield mover.change_pose(), time_to_blink, error
+
+# Gradio interface
+interface = gr.Blocks()
+with interface:
+    # Note gallery expects a 3-D array: (L, W, 3)
+    gallery = gr.Image(label="Generated images", show_label=False)\
+        .style(height=300)
+    time_text = gr.Textbox(label="Time to blink")
+    error_text = gr.Textbox(label=f"Error between desired ({mover.total_blink_time_i} seconds) and actual time")
+    start_btn = gr.Button(label="Start Animation")
+    start_btn.click(update_loop, inputs=[], outputs=[gallery, time_text, error_text], queue=True)
+    
+# Start interface with queuing for live image updating
+interface.queue(concurrency_count=3).launch(debug=True, share=True, inline=False, inbrowser=True)
+# Note if you lose the link, press Ctrl+Shift+T to get the tab back
+{{code}}
+
+{{youtube(https://youtu.be/RQTAWsozx3w)}}
+
+The EWMA does pretty well and the blink looks to be around the time I wanted it to be. Now there's an internal state allowing my girlfriend to be animated in real-time.
+
+## Timing Mouth Movement
+
+My girlfriend doesn't look like a still image anymore! Very happy with that, but why not keep going? Let's get her to look like she's talking to me instead of just creepily smiling at me. This part should be easy right?
+
+At this point in the project, I realized my girlfriend was going to make my life even more difficult. Remember that we used a for loop to generate blinks, but using a basic "for" loop is not going to work since blinking and talking occur independently, but the animation has a dependence on both the lip-sync and eye-blink. A "for" loop on its own would require the mouth and eyes to be updated synchronously.
+
+Before diving into the implementation, I formally defined the following requirements that I wanted to fulfill the goal of adding movement:
+
+1. I want blinks to occur every so often, but not at a consistent rate.
+2. I want the mouth to mostly sync up with the audio played.
+3. I want blinks to have the potential to occur as the mouth is moving.
+4. I want the image to look like it's moving in real-time with as little latency as possible.
+
+So far, I have achieved goals 1 and 4. To achieve the other two goals, I created three separate functions that will run in parallel.
+
+1. The main function is going to run indefinitely until it finds that it needs to update the image due to a vector change. When it finds that it needs to update the image, it will update it and display the new image.
+2. The next function is the blinking function. This function also runs indefinitely. Every so often, this function triggers blink loops. Each loop is composed of a single blink and is implemented by changing the style vector. To ensure the update looks smooth, it waits until the next blink frame was shown to change the vector again.
+3. The last function is the mouth movement function which only runs when it needs to generate new audio. Like with the blink function, it changed the style vector as needed.
+
+All three functions run at the same time. While thread 3 checks for updates to the style vectors, threads 1 and 2 update the style vector and wait for it to be displayed before updating it again.
+
+Just like with eye movement, mouth movement is represented as a percentage in the vector. Also, like with eye movement, we need a duration for the mouth loop to open and close once. This information is more difficult to obtain, but we can take the generated audio sequence, pass it through a model to give timesteps for each word, and open and close the mouth according to these timesteps.
+
+Specifically, I follow these steps to syn the mouth and audio:
+
+1. Get the timesteps for each word in the audio.
+2. Begin playing the audio and wait until the first word should be lip-synced.
+3. Calculate the number of frames and mouth movement percentages needed to sync mouth movement for the first word.
+4. Loop over all frames. Assuming the EWMA is correct, the end of the word should align with the mouth closing.
+5. Wait until the next word.
+6. Repeat steps 3, 4, and 5 until the audio is done playing.
+
+I'm not going to go into the details about how I coded this exactly since it's just keeping track of everything and making sure all the threads know what's going on with each other, but the code below implements these requirements in the notebook.
+
+{{code(python)}}
+# We need the entire girlfriend object for this part
+try:
+    del mover
+except NameError:
+    pass
+obj = Girlfriend_Obj()
+
+def event_loop():
+    # Initial update to make everything visible
+    yield obj.last_image
+
+    # Quick calibration. Blink 10 times
+    # and calibrate the time it takes
+    # to show the image for the EWMA
+    for i in range(0, 10):
+        s = time.time()
+        obj.img_anim.eye_cycle_end = False
+        while obj.img_anim.eye_cycle_end == False:
+            obj.img_anim.Move_eyes()
+            img = obj.img_anim.change_pose()
+            obj.img_anim.update_EMA(time.time()-s)
+            s = time.time()
+            yield img
+    obj.img_anim.eye_cycle_end = False
+
+    # Start the blink loop
+    if obj.b_thread == None:
+        obj.b_thread = threading.Thread(target=obj.run_blink_loop, args=())
+        obj.b_thread.start()
+    
+    # Make sure the mouth isn't already moving
+    if obj.generating_mouth_movement == True:
+        return
+    # Make sure the thread is not running
+    if obj.m_thread is not None:
+        obj.m_thread.join()
+    # Start the mouth movement loop
+    obj.m_thread = threading.Thread(target=obj.run_talk_loop, args=("test_audio.mp3",))
+    obj.m_thread.start()
+
+    obj.generating_mouth_movement == True
+    while True:
+        # Wait until a new frame needs to be generated
+        if obj.generating_mouth_movement == True:
+            if obj.img_anim.mouth_frame_disp == False:
+                # Change the pose and show the image
+                img = obj.img_anim.change_pose()
+
+                yield img
+        else:
+            # Start the mouth movement loop
+            if obj.img_anim.eye_frame_disp == False:
+                # Change the pose and show the image
+                img = obj.img_anim.change_pose()
+
+                yield img
+
+        time.sleep(0.0001)
+
+# Gradio interface
+interface = gr.Blocks()
+with interface:
+    # Note gallery expects a 3-D array: (L, W, 3)
+    gallery = gr.Image(label="Generated images", show_label=False)\
+        .style(height=300)
+    start_btn = gr.Button(label="Start Animation")
+    start_btn.click(event_loop, inputs=[], outputs=[gallery], queue=True)
+    
+# Start interface with queuing for live image updating
+interface.queue().launch(inline=False, inbrowser=True)
+# IF colab:
+# interface.queue().launch(debug=True, share=True, inline=False, inbrowser=True)
+{{code}}
+
+{{youtube(https://youtu.be/PFwoKE6R2VU)}}
+
+Note that the EWMA is used for both the mouth movement and blinking loops to generate a predefined movement rate for each blink/mouth movement cycle. This way, the number of frames is estimated on the fly and the image generation appears to occur in real-time.
+
+I think the output looks good enough. That meets the 10th requirement I defined!
+
+Note: If running in a Colab notebook, the output animation may not look very good since the GPUs Colab provides for free aren't very good.
+
+## Complete Output
+
+If you are curious to see what the final program looks like, I have an example below which is a conversation between me and my girlfriend.
+
+{{youtube(https://youtu.be/PxsyIjzlcCM)}}
+
+The complete [repo](https://github.com/gmongaras/AI_Girlfriend) can be found here and the complete [colab](https://colab.research.google.com/drive/1Nl5ioIkJdrsE-IoMUNPMsDt-wMi18JLN?usp=sharing) can be found here.
+
+## Conclusion
+
+As a Computer Science major, I'm not entirely sure why I should have to try to get a girlfriend when I can make my own. So, I did just that and you can too!
+
+Let me know if you have any questions or run into any issues with the notebooks.

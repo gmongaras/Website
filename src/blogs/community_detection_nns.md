@@ -1,5 +1,5 @@
-Note :Imported from [medium](https://medium.com/smucs/community-detection-with-neural-networks-2e6c79a28d0c)
-
+Note: Imported from [medium](https://medium.com/smucs/community-detection-with-neural-networks-2e6c79a28d0c)
+  
 This article is written for a class project and is a continuation of a previous article linked below. The previous article, written by  which describes how the Girvan Newman algorithm attempts to solve the community detection Problem:
 
 See [Why Girvan-Newman?](https://medium.com/@trevordohm/68506e824e93) for context.
