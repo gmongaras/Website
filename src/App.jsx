@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle, useContext, useCallback } from "react"
 import { createPortal } from "react-dom"
-import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
+import { Menu, X, Mail, ExternalLink, FileText, GraduationCap, Briefcase, BookOpen, Cpu, Phone, BookAudio, ChevronLeft, ChevronRight, ChevronDown, Download, Loader2 } from "lucide-react"
 import { FaXTwitter, FaLinkedin, FaYoutube, FaGithub } from "react-icons/fa6"
 import { SiHuggingface } from "react-icons/si"
 import { profile, education, skills, experience, publications, articles, youtubeVideos, NeedleInAHaystackNote } from "./data"
@@ -486,7 +486,7 @@ const Header = ({ onMobileMenuToggle }) => {
   ]
 
   return (
-    <header className="sticky top-0 z-40 bg-black/70 backdrop-blur relative">
+    <header className="no-print sticky top-0 z-40 bg-black/70 backdrop-blur relative">
       <div className="section py-4 flex items-center justify-between">
         {/* Brand */}
         <a href="/" className="flex items-center gap-2 tracking-wide hover:opacity-90">
@@ -1559,7 +1559,7 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
   }
 
   return (
-    <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
+    <aside className="no-print hidden lg:block lg:sticky lg:top-24 lg:self-start">
       <div className="article-toc p-4">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -1718,13 +1718,13 @@ const CodeBlockRenderer = ({ code, language = 'text' }) => {
   const processedCode = code.replace(/\\\\/g, '\\')
 
   return (
-    <div className="my-6">
-      <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group">
-        <div className="flex items-center justify-between bg-gray-800 px-4 py-2 text-sm text-gray-300 border-b border-gray-700">
+    <div className="pdf-block my-6">
+      <div className="pdf-block-surface bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group">
+        <div className="pdf-block-header flex items-center justify-between bg-gray-800 px-4 py-2 text-sm text-gray-300 border-b border-gray-700">
           <span className="font-mono">{language}</span>
           <button
             onClick={handleCopy}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700"
+            className="no-print opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700"
             title="Copy code"
           >
             {copied ? (
@@ -1850,12 +1850,21 @@ const ListRenderer = ({ items, ordered = false }) => {
   return parseNestedList(items, ordered)
 }
 
+// Lazy-mounted media stays out of the DOM until scrolled to, which would leave holes
+// in a printed article, so printing flips every renderer into an eager mode first.
+const PrintModeContext = React.createContext(false)
+
 // Let the browser manage lazy loading while reserving space for each image.
 const LazyImage = ({ src, alt, width, height, className, onError, ...props }) => {
+  const isPrintMode = useContext(PrintModeContext)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(false)
   const [hasError, setHasError] = useState(false)
   const wrapperRef = useRef(null)
+
+  useEffect(() => {
+    if (isPrintMode) setIsInView(true)
+  }, [isPrintMode])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1882,7 +1891,7 @@ const LazyImage = ({ src, alt, width, height, className, onError, ...props }) =>
   return (
     <div
       ref={wrapperRef}
-      className="relative mx-auto"
+      className="pdf-image-frame relative mx-auto"
       style={{
         width: width ? `${width}px` : '100%',
         maxWidth: '100%',
@@ -1893,7 +1902,7 @@ const LazyImage = ({ src, alt, width, height, className, onError, ...props }) =>
         <img
           src={src}
           alt={alt}
-          loading="lazy"
+          loading={isPrintMode ? 'eager' : 'lazy'}
           decoding="async"
           onLoad={() => setIsLoaded(true)}
           onError={handleError}
@@ -1902,7 +1911,7 @@ const LazyImage = ({ src, alt, width, height, className, onError, ...props }) =>
         />
       )}
       {!isLoaded && isInView && !hasError && (
-        <div className="absolute inset-0 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
+        <div className="no-print absolute inset-0 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
         </div>
       )}
@@ -1936,7 +1945,7 @@ const ImageRenderer = ({ alt, src, caption }) => {
     }) : null
 
   return (
-    <div className="mb-4 my-4 text-center">
+    <div className="pdf-figure mb-4 my-4 text-center">
       <div className="group relative block w-full overflow-visible rounded-lg p-2">
         <LazyImage 
           src={src} 
@@ -1957,8 +1966,10 @@ const ImageRenderer = ({ alt, src, caption }) => {
 }
 
 const YouTubeRenderer = ({ videoId }) => {
+  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`
+
   return (
-    <div className="my-6">
+    <div className="pdf-block my-6">
       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
         <iframe
           className="absolute top-0 left-0 w-full h-full rounded-lg border border-white/10"
@@ -1969,6 +1980,9 @@ const YouTubeRenderer = ({ videoId }) => {
           allowFullScreen
         />
       </div>
+      <p className="print-only text-sm">
+        Video: <a href={watchUrl}>{watchUrl}</a>
+      </p>
     </div>
   )
 }
@@ -2109,9 +2123,19 @@ const LatexRenderer = ({ content }) => {
   return <ContentRenderer content={content} />
 }
 
+const nextPaint = () => new Promise((resolve) => {
+  requestAnimationFrame(() => requestAnimationFrame(resolve))
+})
+
+const toPdfFileName = (title) => title.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || 'article'
+
 const BlogPost = ({ post, initialSection }) => {
   const [pendingSection, setPendingSection] = useState(initialSection)
   const [hasScrolledSection, setHasScrolledSection] = useState(false)
+  const [isPrintMode, setIsPrintMode] = useState(false)
+  const [pdfProgress, setPdfProgress] = useState(null)
+  const [pdfFailed, setPdfFailed] = useState(false)
+  const articleRef = useRef(null)
 
   if (!post) {
     return (
@@ -2191,10 +2215,59 @@ const BlogPost = ({ post, initialSection }) => {
     }
   }, [post.slug])
 
+  // A manual Ctrl+P should get the same clean article as the download button.
+  useEffect(() => {
+    const root = document.getElementById('root')
+    const enablePrintMode = () => {
+      setIsPrintMode(true)
+      root?.classList.add('pdf-paper')
+    }
+    const disablePrintMode = () => {
+      setIsPrintMode(false)
+      root?.classList.remove('pdf-paper')
+    }
+
+    window.addEventListener('beforeprint', enablePrintMode)
+    window.addEventListener('afterprint', disablePrintMode)
+    return () => {
+      window.removeEventListener('beforeprint', enablePrintMode)
+      window.removeEventListener('afterprint', disablePrintMode)
+      root?.classList.remove('pdf-paper')
+    }
+  }, [])
+
+  const isExportingPdf = pdfProgress !== null
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (isExportingPdf || !articleRef.current) return
+
+    setPdfFailed(false)
+    setPdfProgress(0)
+    // Mounts every lazy image so nothing is missing from the cloned article.
+    setIsPrintMode(true)
+
+    try {
+      await nextPaint()
+      const { exportArticlePdf } = await import('./pdf/exportArticlePdf')
+      await exportArticlePdf({
+        article: articleRef.current,
+        fileName: toPdfFileName(post.title),
+        onProgress: setPdfProgress,
+      })
+    } catch (error) {
+      console.error('Failed to export article as PDF:', error)
+      setPdfFailed(true)
+    } finally {
+      setPdfProgress(null)
+      setIsPrintMode(false)
+    }
+  }, [isExportingPdf, post.title])
+
   const contentHeadings = React.useMemo(() => extractHeadings(post.body), [post.body])
   const subtitle = post.subtitle || post.excerpt || ''
 
   return (
+    <PrintModeContext.Provider value={isPrintMode}>
     <div className="min-h-screen">
       <SEO 
         title={post.title}
@@ -2205,13 +2278,28 @@ const BlogPost = ({ post, initialSection }) => {
         structuredData={blogStructuredData}
       />
       <Header />
-      <div className="section py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto grid gap-8 lg:grid-cols-[260px_minmax(0,1024px)]">
+      <div className="section py-16 sm:py-24 pdf-page">
+        <div className="max-w-7xl mx-auto grid gap-8 lg:grid-cols-[260px_minmax(0,1024px)] pdf-grid">
           <ArticleToc headings={contentHeadings} postSlug={post.slug} onNavigateSection={handleNavigateSection} initialSection={initialSection} />
           <div>
-            <article className="prose prose-invert max-w-5xl mx-auto">
+            <article ref={articleRef} className="pdf-article prose prose-invert max-w-5xl mx-auto">
               <header className="mb-10">
                 <h1 className="text-3xl sm:text-4xl font-bold mb-4">{post.title}</h1>
+                <div className="no-print mb-6">
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={isExportingPdf}
+                    className="btn text-sm disabled:cursor-wait"
+                    title="Download this article as a PDF"
+                  >
+                    {isExportingPdf ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> {Math.round(pdfProgress * 100)}%</>
+                    ) : (
+                      <><Download className="w-4 h-4" /> {pdfFailed ? 'Retry PDF' : 'PDF'}</>
+                    )}
+                  </button>
+                </div>
                 {subtitle ? <p className="max-w-3xl text-white/70 mb-6">{subtitle}</p> : null}
                 <div className="flex flex-wrap items-center gap-4 text-sm text-white/60 mb-6">
                   <time>{new Date(post.date).toLocaleDateString('en-US', { 
@@ -2245,6 +2333,7 @@ const BlogPost = ({ post, initialSection }) => {
         </div>
       </div>
     </div>
+    </PrintModeContext.Provider>
   )
 }
 

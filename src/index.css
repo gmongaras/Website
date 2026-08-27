@@ -169,6 +169,215 @@ html, body, #root {
   line-height: 1.4;
 }
 
+.print-only {
+  display: none;
+}
+
+/* "Paper" styling: strips the site chrome and turns the article into ink on
+   white. Applied to the off-screen clone the PDF exporter rasterises, and to
+   the live page while the browser's own print dialog is open. */
+.pdf-paper {
+  background: #ffffff;
+  color: #111111;
+}
+
+.pdf-paper .no-print,
+.pdf-paper canvas,
+.pdf-paper iframe {
+  display: none !important;
+}
+
+.pdf-paper .print-only {
+  display: block;
+}
+
+.pdf-paper .pdf-page {
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.pdf-paper .pdf-grid {
+  display: block !important;
+  max-width: none !important;
+  gap: 0 !important;
+}
+
+/* Laid out in the fonts the PDF itself uses (Arial is metric-compatible with
+   Helvetica), so the browser's line breaks match the exported text exactly.
+   KaTeX keeps its own faces, which are embedded in the PDF. */
+.pdf-paper .pdf-article {
+  max-width: none !important;
+  margin: 0 !important;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.pdf-paper .pdf-article code,
+.pdf-paper .pdf-article pre,
+.pdf-paper .pdf-article kbd,
+.pdf-paper .pdf-article samp {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.pdf-paper .pdf-article *,
+.pdf-paper .pdf-article *::before,
+.pdf-paper .pdf-article *::after {
+  color: #111111 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-color: #cccccc !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+.pdf-paper .pdf-article a {
+  color: #1a3fb0 !important;
+  text-decoration: underline;
+}
+
+.pdf-paper .pdf-article h1,
+.pdf-paper .pdf-article h2,
+.pdf-paper .pdf-article h3,
+.pdf-paper .pdf-article h4 {
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+}
+
+.pdf-paper .pdf-article header {
+  margin-bottom: 1.5rem;
+}
+
+/* --- Images --- */
+.pdf-paper .pdf-article .pdf-image-frame {
+  position: static !important;
+  display: inline-block;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  aspect-ratio: auto !important;
+}
+
+.pdf-paper .pdf-article .pdf-image-frame img {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 640px !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* --- Code blocks --- */
+.pdf-paper .pdf-article .pdf-block-surface {
+  overflow: visible !important;
+  background: #f6f6f6 !important;
+  border: 1px solid #d4d4d4 !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pdf-paper .pdf-article .pdf-block-header {
+  background: #ececec !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pdf-paper .pdf-article pre {
+  overflow: visible !important;
+  white-space: pre-wrap !important;
+  word-break: break-word;
+}
+
+.pdf-paper .pdf-article pre code {
+  white-space: pre-wrap !important;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* --- Math --- */
+.pdf-paper .pdf-article .katex-display {
+  overflow: visible !important;
+  margin: 1rem auto;
+}
+
+.pdf-paper .pdf-article .katex {
+  font-size: 1em !important;
+}
+
+/* Fraction bars, radicals and overlines are borders, so they must not be
+   flattened to the light border colour used for the rest of the article. */
+.pdf-paper .pdf-article .katex * {
+  border-color: currentColor !important;
+}
+
+/* Tag chips read better as plain outlines on paper */
+.pdf-paper .pdf-article .chip {
+  border: 1px solid #cccccc !important;
+  padding: 0.1rem 0.5rem;
+}
+
+/* The browser's own print output reuses the rules above; these only handle the
+   page box and keeping blocks off page seams, which the PDF exporter does in JS. */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 14mm;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    overflow: visible !important;
+    scroll-behavior: auto;
+  }
+
+  .no-print,
+  canvas,
+  iframe {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .pdf-article h1,
+  .pdf-article h2,
+  .pdf-article h3,
+  .pdf-article h4 {
+    break-after: avoid-page;
+    page-break-after: avoid;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .pdf-article p,
+  .pdf-article li,
+  .pdf-article dd {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .pdf-article .pdf-figure,
+  .pdf-article .pdf-block,
+  .pdf-article .pdf-image-frame,
+  .pdf-article figure,
+  .pdf-article table,
+  .pdf-article tr,
+  .pdf-article blockquote,
+  .pdf-article .katex-display {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
 /* Hide scrollbars */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */

@@ -11,19 +11,21 @@
     "preview": "vite preview",
     "generate-image-dimensions": "node scripts/generateImageDimensions.js",
     "generate-sitemap": "node scripts/generateSitemap.js",
-    "generate-og-image": "python scripts/generateOGImage.py"
+    "generate-og-image": "python scripts/generateOGImage.py",
+    "test-page-breaks": "node scripts/testPageBreaks.mjs"
   },
   "dependencies": {
     "@icons-pack/react-simple-icons": "^13.8.0",
     "framer-motion": "^12.23.22",
+    "jspdf": "^4.2.1",
     "katex": "^0.16.25",
     "lucide-react": "^0.470.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
-    "react-markdown": "^10.1.0",
     "react-icons": "^5.5.0",
     "react-katex": "^3.1.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.4"
   },
   "devDependencies": {
