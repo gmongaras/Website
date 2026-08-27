@@ -1420,11 +1420,32 @@ const escapeHtml = (text) => {
 
 const createHeadingId = (text) => {
   return text
+    .replace(/\$\$?[^$]+\$\$?/g, '')
     .replace(/<[^>]+>/g, '')
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
+}
+
+const renderHeadingLabel = (text) => {
+  const rendered = escapeHtml(text)
+    .replace(/\$\$([^$]+)\$\$/g, (match, latex) => {
+      try {
+        return katex.renderToString(latex, { displayMode: true })
+      } catch {
+        return match
+      }
+    })
+    .replace(/\$([^$]+)\$/g, (match, latex) => {
+      try {
+        return katex.renderToString(latex, { displayMode: false })
+      } catch {
+        return match
+      }
+    })
+
+  return <span dangerouslySetInnerHTML={{ __html: rendered }} />
 }
 
 const parseBlogHash = (hash) => {
@@ -1574,7 +1595,7 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
                   }}
                   aria-current={activeSection === item.slug ? 'location' : undefined}
                 >
-                  {item.text}
+                  {renderHeadingLabel(item.text)}
                 </a>
                 {item.children.length > 0 ? (
                   <button
@@ -1604,7 +1625,7 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
                           onNavigateSection && onNavigateSection(child.slug)
                         }}
                         aria-current={activeSection === child.slug ? 'location' : undefined}
-                      >{child.text}</a>
+                      >{renderHeadingLabel(child.text)}</a>
                     </li>
                   ))}
                 </ul>
@@ -1861,8 +1882,10 @@ const LazyImage = ({ src, alt, width, height, className, onError, ...props }) =>
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full"
+      className="relative mx-auto"
       style={{
+        width: width ? `${width}px` : '100%',
+        maxWidth: '100%',
         aspectRatio: width && height ? `${width} / ${height}` : '16 / 9',
       }}
     >
@@ -2027,7 +2050,7 @@ const MarkdownHeading = ({ level, children }) => {
     3: 'text-xl font-bold mt-8 mb-4 text-white',
   }
 
-  return <Tag id={createHeadingId(headingText)} className={classes[level]}>{children}</Tag>
+  return <Tag id={createHeadingId(headingText)} className={`${classes[level]} scroll-mt-24`}>{children}</Tag>
 }
 
 const getYoutubeVideoId = (url) => {
