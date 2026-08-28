@@ -32,25 +32,26 @@ The following SEO optimizations have been implemented:
 
 ## 🔧 Next Steps (Manual Setup Required)
 
-### 1. Install Dependencies
-```bash
-npm install react-helmet-async
-```
+### 1. Google Search Console Setup
+The property is already verified by `public/googlec6e232296e811975.html`, which Vite
+copies to the site root at build time. Leave that file in place — removing it revokes
+verification.
 
-### 2. Google Search Console Setup
+To verify again from scratch (new property, or a lost claim):
 1. Go to [Google Search Console](https://search.google.com/search-console)
 2. Add your property: `https://gmongaras.me`
 3. Choose "HTML file" verification method
-4. Download the verification file and replace `public/google-site-verification.html`
+4. Drop the downloaded `google<hash>.html` into `public/` (it is named after your
+   property, so it will not match the existing file — delete the old one)
 5. Click "Verify" in Google Search Console
 6. Submit your sitemap: `https://gmongaras.me/sitemap.xml`
 
-### 3. Generate Updated Sitemap
+### 2. Generate Updated Sitemap
 ```bash
 npm run generate-sitemap
 ```
 
-### 4. Test Your SEO
+### 3. Test Your SEO
 - Use [Google's Rich Results Test](https://search.google.com/test/rich-results) to validate structured data
 - Use [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) to test Open Graph tags
 - Use [Twitter Card Validator](https://cards-dev.twitter.com/validator) to test Twitter Cards

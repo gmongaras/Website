@@ -1,83 +1,148 @@
+# Gabriel Mongaras — Portfolio
+
 Time to totally not vibecode a website >w<
 
-# Gabriel Mongaras — Portfolio (React + Vite + Tailwind)
+A single-page portfolio and technical blog built with React, Vite and Tailwind,
+deployed to GitHub Pages at [gmongaras.me](https://gmongaras.me). Articles are
+written in Markdown with LaTeX and can be exported as real, text-based PDFs
+straight from the browser.
 
-Dark, elegant portfolio built with React (Vite) and Tailwind, matching your requested palette:
-- **Background:** `#000000` (black)
-- **Accent:** `#3B0066` (dark purple)
-
-Your PDF resume has been placed at `public/Resume.pdf` so the **Resume (PDF)** button works out-of-the-box.
-
----
-
-## Local Setup
+## Getting started
 
 ```bash
 npm install
-npm run dev
+npm run dev      # http://localhost:5173
 ```
-
-## Build
 
 ```bash
-npm run build
-npm run preview   # optional local preview of dist/
+npm run build    # outputs to dist/
+npm run preview  # serve dist/ locally
 ```
 
----
+`predev` and `prebuild` regenerate `src/blogImageDimensions.js`, so both
+commands work from a clean checkout without any extra steps.
 
-## Deploying on GitHub Pages
+## Layout
 
-### Option A: GitHub Pages with Custom Domain (recommended if you own a domain)
+```
+src/
+  App.jsx                 Hash routing and the home page composition
+  data.js                 Profile, education, skills, experience, publications
+  projects.js             Project cards
+  youtubeData.js          Generated — see scripts/GetYoutueData.py
+  blogImageDimensions.js  Generated — see scripts/generateImageDimensions.js
+  blogs/                  One .md article plus a .js file of metadata each
+  components/
+    Header.jsx            Sticky nav, blog hover menu, mobile sheet
+    SEO.jsx               Per-view meta tags, Open Graph and JSON-LD
+    sections/             The home page sections, one file each
+    blog/                 Article view, table of contents, markdown renderers
+    ui/                   Cards, buttons, lazy images, horizontal card rows
+  lib/                    Markdown, hash parsing and date helpers
+  pdf/                    Vector PDF exporter for articles
+  GraphBackground.jsx     Animated node graph behind the hero
+scripts/                  Content generators (see below)
+```
 
-1. In your repo **Settings → Pages**, set:
-   - **Source:** `GitHub Actions`
-2. If you have a custom domain (e.g., `gmongaras.me`), add it in **Settings → Pages** → **Custom domain**.
-3. Keep `vite.config.js` as `base: '/'` for a custom domain.
-4. Push the repo with the included workflow; it will build and deploy automatically.
+## Editing content
 
-### Option B: GitHub Pages under `<user>.github.io/<repo>`
+| What | Where |
+| --- | --- |
+| Name, links, summary, contact details | `src/data.js` |
+| Education, skills, experience, publications, articles | `src/data.js` |
+| Project cards | `src/projects.js` |
+| Blog posts | `src/blogs/` |
 
-1. Edit `vite.config.js` and change base to your repo name, e.g.:
+### Adding a blog post
+
+1. Write the article as `src/blogs/<name>.md`.
+2. Add `src/blogs/<name>.js` exporting the metadata alongside the body:
+
    ```js
-   export default defineConfig({
-     plugins: [react()],
-     base: '/<your-repo-name>/',
-   })
+   import body from './<name>.md?raw'
+
+   export const post = {
+     slug: 'my-post',              // used in the URL: /#blog/my-post
+     title: 'My Post',
+     date: '2026-01-31',
+     tags: ['Machine Learning'],
+     excerpt: 'One line for the card and meta description.',
+     body,
+   }
    ```
-2. Commit and push. The included GitHub Actions workflow will publish to Pages.
 
-### GitHub Actions Workflow
+   `subtitle`, `authors` and `affiliations` are optional and render in the
+   article header when present.
+3. Register it in `src/blogs/index.js`. The first entry is the newest, and the
+   first three show up in the header's Blogs menu.
+4. Put images under `public/blogs/images/<name>/` and reference them as
+   `/blogs/images/<name>/1.webp`. Run `npm run generate-image-dimensions` so
+   their size is known ahead of load and nothing shifts on the page.
+5. Run `npm run generate-sitemap`.
 
-The file `.github/workflows/deploy.yml` is already included. It:
-- Builds the site on pushes to `main`
-- Uploads `dist/` as a Pages artifact
-- Deploys to GitHub Pages automatically
+### Article syntax
 
-If you use a branch other than `main`, adjust the workflow trigger.
+Standard Markdown, plus:
 
----
+- **Maths** — `$inline$` and `$$display$$`, rendered by KaTeX.
+- **Figures** — `![alt](/blogs/images/foo/1.webp "caption")`. The caption
+  supports links, `*emphasis*`, `` `code` `` and maths.
+- **YouTube** — a fenced block with the `youtube` language and a URL or bare
+  video id as its only line.
+- Legacy `{{code(lang)}}…{{code}}` and `{{youtube(url)}}` blocks from older
+  articles are rewritten to fenced blocks before rendering.
 
-## Updating Content
+Level-2 and level-3 headings automatically become the table of contents, and
+each gets an anchor so `/#blog/<slug>/<heading-id>` links to a section.
 
-Edit `src/data.js` to change your profile, experience, education, skills, projects, and publications.
-Links and labels are stored next to each item for convenience.
+## PDF export
+
+Every article has a **PDF** button. Rather than screenshotting the page, the
+exporter clones the article off-screen at the printable page width, lets the
+browser lay it out, then replays that layout as PDF text, vector rectangles and
+embedded images — so the result stays selectable, searchable and sharp at any
+zoom. The KaTeX fonts the article actually uses are embedded on demand.
+`src/pdf/pagination.js` decides the page breaks, keeping paragraphs, figures and
+equations whole and never leaving a heading stranded at the foot of a page.
+
+`Ctrl+P` uses the browser's own print pipeline against the same `.pdf-paper`
+styles in `src/index.css`.
+
+## Scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm run generate-image-dimensions` | Scans `public/blogs/images` and writes `src/blogImageDimensions.js` |
+| `npm run generate-sitemap` | Writes `public/sitemap.xml` from the registered posts |
+| `npm run generate-og-image` | Regenerates `public/og-image.png` (Python) |
+
+`scripts/GetYoutubeURLs.py` and `scripts/GetYoutueData.py` refresh
+`src/youtubeData.js`, which powers the Media section. `scripts/projects.ipynb`
+was used to bootstrap `src/projects.js`.
 
 ## Theming
 
-Palette is controlled via Tailwind config and CSS variables:
-- `tailwind.config.js` → `colors.accent`
-- `src/index.css` → `:root { --bg: #000000; --accent: #3B0066; }`
+The palette lives in CSS variables in `src/index.css`:
 
-## Accessibility & SEO
+```css
+:root {
+  --bg: #000000;
+  --accent: #6A1B9A;
+  --accent-rgb: 106, 27, 154;
+}
+```
 
-- Semantic sections and headings
-- Descriptive button text and accessible labels
-- Metadata in `index.html`
+`--accent-rgb` has to match `--accent`; the gradients, the hero graph and the
+glow effects all build colours from it. `tailwind.config.js` carries a separate
+`accent` colour used by the `bg-accent/*` and `border-accent/*` utilities.
 
----
+## Deployment
 
-## Notes
+`.github/workflows/deploy.yml` builds on every push to `main` and publishes
+`dist/` to GitHub Pages. In **Settings → Pages**, set the source to
+**GitHub Actions**. The custom domain is committed in `CNAME`, which is why
+`vite.config.js` keeps `base: '/'` — serving from
+`<user>.github.io/<repo>/` instead requires changing that to `/<repo>/`.
 
-- If you rename the PDF, also update the link in `Hero` component (`/Resume.pdf`).
-- You can add a blog later by creating a `/blog` folder and using a static site generator or MDX pages inside `src`.
+See [SEO_SETUP.md](SEO_SETUP.md) for the search-console and structured-data
+checklist.

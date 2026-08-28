@@ -7,7 +7,6 @@
   /* --accent: #3B0066; */
   --accent: #6A1B9A;
   --accent-rgb: 106, 27, 154;
-  --header-height: 80px;
   /* Gradient variables */
   --gradient-accent-bg: radial-gradient(1200px 800px at 80% -10%, rgba(var(--accent-rgb),0.35), transparent 60%),
                         radial-gradient(800px 600px at -10% 110%, rgba(var(--accent-rgb),0.25), transparent 60%);
@@ -52,30 +51,6 @@ html, body, #root {
 
 .link {
   @apply inline-flex items-center gap-1 hover:underline decoration-accent/60 underline-offset-4;
-}
-
-.blog-article {
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-.blog-article h1,
-.blog-article h2,
-.blog-article h3 {
-  color: #ffffff;
-}
-
-.blog-article p,
-.blog-article li,
-.blog-article dt,
-.blog-article dd {
-  color: rgba(255,255,255,0.9);
-  line-height: 1.85;
-}
-
-.blog-article .prose > *:first-child {
-  margin-top: 0;
 }
 
 .article-toc {

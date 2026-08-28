@@ -202,8 +202,3 @@ export const articles = [
 
 // Import YouTube videos from automatically generated file
 export { youtubeVideos } from './youtubeData.js';
-
-export const activitiesAwards = {
-  activities: ["Artificial Intelligence Club (President)", "Cybersecurity Club", "Computer Science Club", "Commons Council"],
-  awards: ["Cum Laude", "Phi Beta Kappa", "Hunt Scholars", "Hyer Society", "Rotunda Scholars", "Hilltop Scholar", "University Honor Roll", "Discovery Scholar"]
-}

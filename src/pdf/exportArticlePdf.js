@@ -5,14 +5,11 @@
 // vector rectangles and embedded images, so the result stays selectable,
 // searchable and sharp at any zoom.
 
+import { nextPaint } from '../lib/dom.js'
 import { collectDrawOps } from './drawOps.js'
 import { embedKatexFonts, toWinAnsi } from './fonts.js'
 import { collectBlocks, computePageBreaks } from './pagination.js'
 import { CONTENT_PX, MARGIN, MM_PER_PX, PT_PER_PX } from './page.js'
-
-const nextPaint = () => new Promise((resolve) => {
-  requestAnimationFrame(() => requestAnimationFrame(resolve))
-})
 
 const waitForImages = (root, timeoutMs = 20000) => {
   const pending = Array.from(root.querySelectorAll('img'))

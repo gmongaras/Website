@@ -1,300 +1,327 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 
-const GraphBackground = ({ containerRef }) => {
-  const canvasRef = useRef(null)
-  const animationRef = useRef(null)
-  const nodesRef = useRef([])
-  const mouseRef = useRef({ x: -1000, y: -1000 })
-  const hoveredNodeRef = useRef(null)
+// One node per this many square pixels, give or take the jitter below.
+const AREA_PER_NODE = 3000
+const NODE_COUNT_JITTER = 20
+const MIN_NODE_SPACING = 30
+const MAX_PLACEMENT_ATTEMPTS = 50
 
-  // Generate random nodes
-  const generateNodes = useCallback((width, height) => {
-    const nodes = []
-    // Add some randomness to node count for variety
-    const baseNodeCount = Math.floor((width * height) / 3000)
-    const nodeCount = baseNodeCount + Math.floor(Math.random() * 20) - 10 // ±10 nodes variation
-    const minDistance = 30 // Smaller minimum distance for denser packing
+const MAX_LINK_DISTANCE = 80
+const MAX_LINKS_PER_NODE = 6
 
-    for (let i = 0; i < nodeCount; i++) {
-      let attempts = 0
-      let x, y
-      
-      do {
-        x = Math.random() * width
-        y = Math.random() * height
-        attempts++
-      } while (
-        attempts < 50 && 
-        nodes.some(node => 
-          Math.sqrt((node.x - x) ** 2 + (node.y - y) ** 2) < minDistance
-        )
-      )
+const MOUSE_INFLUENCE_RADIUS = 120
+const MOUSE_PULL = 0.2
+const RETURN_FORCE = 0.05
+const IDLE_JITTER = 0.02
+const DAMPING = 0.95
+const EDGE_BOUNCE = -0.8
+const PULSE_SPEED = 0.02
+const PULSE_AMPLITUDE = 0.5
+const RADIUS_EASING = 0.1
 
-      nodes.push({
-        x,
-        y,
-        originalX: x, // Store original position
-        originalY: y,
-        vx: 0, // No initial velocity - keep static on reload
-        vy: 0,
-        radius: Math.random() * 2 + 1.5, // Slightly smaller nodes for density
-        originalRadius: Math.random() * 2 + 1.5,
-        targetRadius: Math.random() * 2 + 1.5,
-        pulsePhase: Math.random() * Math.PI * 2,
-        connections: []
-      })
+const HOVER_PADDING = 10
+const OFFSCREEN_MOUSE = { x: -1e4, y: -1e4 }
+
+const RESIZE_DEBOUNCE_MS = 150
+const DEFAULT_ACCENT_RGB = '106, 27, 154'
+
+const distanceSquared = (ax, ay, bx, by) => (ax - bx) ** 2 + (ay - by) ** 2
+
+// The node glow is a radial gradient running from the centre out to twice the
+// node's radius, of which only the inner half is ever painted. The whole shape
+// scales with the radius, so a single gradient defined in unit space can be
+// reused for every node by scaling the canvas transform, instead of allocating
+// a fresh gradient per node per frame.
+const createNodeGradient = (ctx, accentRgb, centreAlpha) => {
+  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 2)
+  gradient.addColorStop(0, `rgba(${accentRgb}, ${centreAlpha})`)
+  gradient.addColorStop(0.5, `rgba(${accentRgb}, ${centreAlpha - 0.3})`)
+  gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`)
+  return gradient
+}
+
+// Rejection sampling for the node positions. The grid keeps each candidate from
+// having to be compared against every node placed so far.
+const generateNodes = (width, height) => {
+  const target = Math.floor((width * height) / AREA_PER_NODE)
+    + Math.floor(Math.random() * NODE_COUNT_JITTER) - NODE_COUNT_JITTER / 2
+
+  const columns = Math.max(1, Math.ceil(width / MIN_NODE_SPACING))
+  const rows = Math.max(1, Math.ceil(height / MIN_NODE_SPACING))
+  const grid = new Map()
+
+  const isTooClose = (x, y) => {
+    const column = Math.floor(x / MIN_NODE_SPACING)
+    const row = Math.floor(y / MIN_NODE_SPACING)
+
+    // Anything within the minimum spacing has to be in one of these nine cells.
+    for (let r = Math.max(row - 1, 0); r <= Math.min(row + 1, rows - 1); r += 1) {
+      for (let c = Math.max(column - 1, 0); c <= Math.min(column + 1, columns - 1); c += 1) {
+        const cell = grid.get(r * columns + c)
+        if (!cell) continue
+
+        for (const node of cell) {
+          if (distanceSquared(node.x, node.y, x, y) < MIN_NODE_SPACING ** 2) return true
+        }
+      }
     }
 
-    return nodes
-  }, [])
+    return false
+  }
 
-  // Generate connections between nearby nodes
-  const generateConnections = useCallback((nodes) => {
-    const maxDistance = 80 // Reduced for denser connections
-    const maxConnections = 6 // More connections for denser graph
+  const nodes = []
 
-    nodes.forEach(node => {
-      node.connections = []
-      const nearbyNodes = nodes.filter(other => 
-        other !== node && 
-        Math.sqrt((node.x - other.x) ** 2 + (node.y - other.y) ** 2) < maxDistance
-      )
-      
-      // Sort by distance and take the closest ones
-      nearbyNodes
-        .sort((a, b) => 
-          Math.sqrt((node.x - a.x) ** 2 + (node.y - a.y) ** 2) - 
-          Math.sqrt((node.x - b.x) ** 2 + (node.y - b.y) ** 2)
-        )
-        .slice(0, Math.min(maxConnections, nearbyNodes.length))
-        .forEach(other => {
-          if (!node.connections.includes(other)) {
-            node.connections.push(other)
-          }
-        })
-    })
-  }, [])
+  for (let i = 0; i < target; i += 1) {
+    let x
+    let y
+    let attempts = 0
 
-  // Animation loop
-  const animate = useCallback(() => {
+    do {
+      x = Math.random() * width
+      y = Math.random() * height
+      attempts += 1
+    } while (attempts < MAX_PLACEMENT_ATTEMPTS && isTooClose(x, y))
+
+    const radius = Math.random() * 2 + 1.5
+    const node = {
+      x,
+      y,
+      originalX: x,
+      originalY: y,
+      // No initial velocity, so the graph looks settled on load.
+      vx: 0,
+      vy: 0,
+      radius,
+      baseRadius: radius,
+      pulsePhase: Math.random() * Math.PI * 2,
+      links: [],
+    }
+
+    nodes.push(node)
+    const key = Math.floor(y / MIN_NODE_SPACING) * columns + Math.floor(x / MIN_NODE_SPACING)
+    const cell = grid.get(key)
+    if (cell) cell.push(node)
+    else grid.set(key, [node])
+  }
+
+  return nodes
+}
+
+// Links every node to its closest few neighbours within range.
+const linkNodes = (nodes) => {
+  for (const node of nodes) {
+    const nearby = []
+
+    for (const other of nodes) {
+      if (other === node) continue
+      const gap = distanceSquared(node.x, node.y, other.x, other.y)
+      if (gap < MAX_LINK_DISTANCE ** 2) nearby.push({ other, gap })
+    }
+
+    nearby.sort((a, b) => a.gap - b.gap)
+    node.links = nearby.slice(0, MAX_LINKS_PER_NODE).map((entry) => entry.other)
+  }
+}
+
+/**
+ * The animated node graph behind the hero. It is drawn on a canvas sized to the
+ * element passed in as `containerRef`, which is also where pointer movement is
+ * read from since the canvas itself ignores pointer events.
+ */
+const GraphBackground = ({ containerRef }) => {
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
-    const rect = canvas.getBoundingClientRect()
-    const width = rect.width
-    const height = rect.height
+    const container = containerRef?.current
 
-    // Set canvas size
-    canvas.width = width * window.devicePixelRatio
-    canvas.height = height * window.devicePixelRatio
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+    let nodes = []
+    let mouse = { ...OFFSCREEN_MOUSE }
+    let hoveredNode = null
+    let frameId = null
+    let resizeTimer = null
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height)
+    let width = 0
+    let height = 0
+    let pixelRatio = 0
+    let gradients = null
 
-    const nodes = nodesRef.current
-    // Read accent rgb from CSS variables for consistent theming
-    const computedStyles = getComputedStyle(document.documentElement)
-    const accentRgb = computedStyles.getPropertyValue('--accent-rgb').trim() || '106, 27, 154'
-    const mouse = mouseRef.current
+    // Reallocating the backing store clears the canvas and is not cheap, so it
+    // only happens when the measured size or pixel density actually changes.
+    const syncCanvasSize = () => {
+      const rect = canvas.getBoundingClientRect()
+      const ratio = window.devicePixelRatio || 1
+      if (rect.width === width && rect.height === height && ratio === pixelRatio) return false
 
-    // Update and draw nodes
-    nodes.forEach((node, index) => {
-      // Mouse interaction
-      const dx = mouse.x - node.x
-      const dy = mouse.y - node.y
-      const dxToOriginal = node.originalX - node.x
-      const dyToOriginal = node.originalY - node.y
-      const distanceToMouse = Math.sqrt(dx * dx + dy * dy)
-      const distanceToOriginal = Math.sqrt(dxToOriginal * dxToOriginal + dyToOriginal * dyToOriginal)
-      const maxInfluence = 120
+      width = rect.width
+      height = rect.height
+      pixelRatio = ratio
+      canvas.width = Math.round(width * ratio)
+      canvas.height = Math.round(height * ratio)
 
-      // Move nodes closer to the mouse if the mouse is
-      // close to the node and if the node is not too far from
-      // its starting location
-      if (distanceToMouse < maxInfluence && distanceToOriginal < maxInfluence) {
-        // Push closer to mouse
-        const force = (maxInfluence - distanceToMouse) / maxInfluence
-        const angle = Math.atan2(dy, dx)
-        node.vx += Math.cos(angle) * force * 0.2
-        node.vy += Math.sin(angle) * force * 0.2
-      } else {
-        // Return to original position when mouse is far
-        const returnForce = 0.05
-        node.vx += dxToOriginal * returnForce
-        node.vy += dyToOriginal * returnForce
-        
-        // Add gentle random movement when idle
-        node.vx += (Math.random() - 0.5) * 0.02
-        node.vy += (Math.random() - 0.5) * 0.02
+      const accentRgb = getComputedStyle(document.documentElement)
+        .getPropertyValue('--accent-rgb')
+        .trim() || DEFAULT_ACCENT_RGB
+
+      gradients = {
+        idle: createNodeGradient(ctx, accentRgb, 0.7),
+        hovered: createNodeGradient(ctx, accentRgb, 0.9),
+        link: (opacity) => `rgba(${accentRgb}, ${opacity})`,
       }
 
-      // Update position
-      node.x += node.vx
-      node.y += node.vy
+      return true
+    }
 
-      // Bounce off edges
-      if (node.x < 0 || node.x > width) node.vx *= -0.8
-      if (node.y < 0 || node.y > height) node.vy *= -0.8
+    const drawNodes = () => {
+      const influenceSquared = MOUSE_INFLUENCE_RADIUS ** 2
 
-      // Keep within bounds
-      node.x = Math.max(0, Math.min(width, node.x))
-      node.y = Math.max(0, Math.min(height, node.y))
+      for (const node of nodes) {
+        const toMouseX = mouse.x - node.x
+        const toMouseY = mouse.y - node.y
+        const toOriginX = node.originalX - node.x
+        const toOriginY = node.originalY - node.y
 
-      // Damping
-      node.vx *= 0.95
-      node.vy *= 0.95
+        const mouseGap = toMouseX ** 2 + toMouseY ** 2
+        const originGap = toOriginX ** 2 + toOriginY ** 2
 
-      // Pulse animation
-      node.pulsePhase += 0.02
-      node.targetRadius = node.originalRadius + Math.sin(node.pulsePhase) * 0.5
-      node.radius += (node.targetRadius - node.radius) * 0.1
+        // Drift toward the pointer, but only while still near home, so the
+        // graph never unravels.
+        if (mouseGap < influenceSquared && originGap < influenceSquared) {
+          const mouseDistance = Math.sqrt(mouseGap) || 1
+          const force = (MOUSE_INFLUENCE_RADIUS - mouseDistance) / MOUSE_INFLUENCE_RADIUS
+          const pull = (force * MOUSE_PULL) / mouseDistance
+          node.vx += toMouseX * pull
+          node.vy += toMouseY * pull
+        } else {
+          node.vx += toOriginX * RETURN_FORCE + (Math.random() - 0.5) * IDLE_JITTER
+          node.vy += toOriginY * RETURN_FORCE + (Math.random() - 0.5) * IDLE_JITTER
+        }
 
-      // Draw node
-      const gradient = ctx.createRadialGradient(
-        node.x, node.y, 0,
-        node.x, node.y, node.radius * 2
-      )
-      
-      if (hoveredNodeRef.current === node) {
-        gradient.addColorStop(0, `rgba(${accentRgb}, 0.9)`)
-        gradient.addColorStop(0.5, `rgba(${accentRgb}, 0.6)`)
-        gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`)
-      } else {
-        gradient.addColorStop(0, `rgba(${accentRgb}, 0.7)`)
-        gradient.addColorStop(0.5, `rgba(${accentRgb}, 0.4)`)
-        gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`)
+        node.x += node.vx
+        node.y += node.vy
+
+        if (node.x < 0 || node.x > width) node.vx *= EDGE_BOUNCE
+        if (node.y < 0 || node.y > height) node.vy *= EDGE_BOUNCE
+
+        node.x = Math.min(Math.max(node.x, 0), width)
+        node.y = Math.min(Math.max(node.y, 0), height)
+
+        node.vx *= DAMPING
+        node.vy *= DAMPING
+
+        node.pulsePhase += PULSE_SPEED
+        const targetRadius = node.baseRadius + Math.sin(node.pulsePhase) * PULSE_AMPLITUDE
+        node.radius += (targetRadius - node.radius) * RADIUS_EASING
+
+        // Scaling the transform puts the shared unit gradient exactly where a
+        // per-node gradient would have been.
+        const scale = pixelRatio * node.radius
+        ctx.setTransform(scale, 0, 0, scale, pixelRatio * node.x, pixelRatio * node.y)
+        ctx.fillStyle = hoveredNode === node ? gradients.hovered : gradients.idle
+        ctx.beginPath()
+        ctx.arc(0, 0, 1, 0, Math.PI * 2)
+        ctx.fill()
       }
+    }
 
-      ctx.fillStyle = gradient
-      ctx.beginPath()
-      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2)
-      ctx.fill()
-    })
+    const drawLinks = () => {
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+      ctx.lineWidth = 0.8
 
-    // Draw connections
-    nodes.forEach(node => {
-      node.connections.forEach(connectedNode => {
-        const dx = connectedNode.x - node.x
-        const dy = connectedNode.y - node.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        
-        if (distance < 80) {
-          const opacity = Math.max(0, 1 - distance / 80) * 0.4
-          ctx.strokeStyle = `rgba(${accentRgb}, ${opacity})`
-          ctx.lineWidth = 0.8
+      for (const node of nodes) {
+        for (const other of node.links) {
+          const gap = distanceSquared(node.x, node.y, other.x, other.y)
+          if (gap >= MAX_LINK_DISTANCE ** 2) continue
+
+          const distance = Math.sqrt(gap)
+          ctx.strokeStyle = gradients.link((1 - distance / MAX_LINK_DISTANCE) * 0.4)
           ctx.beginPath()
           ctx.moveTo(node.x, node.y)
-          ctx.lineTo(connectedNode.x, connectedNode.y)
+          ctx.lineTo(other.x, other.y)
           ctx.stroke()
         }
-      })
-    })
-
-    animationRef.current = requestAnimationFrame(animate)
-  }, [])
-
-  // Handle mouse move
-  const handleMouseMove = useCallback((e) => {
-    const container = containerRef?.current
-    if (!container) return
-
-    const rect = container.getBoundingClientRect()
-    mouseRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    }
-
-    // Check for hovered nodes
-    const nodes = nodesRef.current
-    hoveredNodeRef.current = null
-    
-    for (const node of nodes) {
-      const dx = mouseRef.current.x - node.x
-      const dy = mouseRef.current.y - node.y
-      const distance = Math.sqrt(dx * dx + dy * dy)
-      
-      if (distance < node.radius + 10) {
-        hoveredNodeRef.current = node
-        break
       }
     }
-  }, [containerRef])
 
-  // Handle mouse enter
-  const handleMouseEnter = useCallback((e) => {
-    const container = containerRef?.current
-    if (!container) return
-
-    const rect = container.getBoundingClientRect()
-    mouseRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+    const step = () => {
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+      ctx.clearRect(0, 0, width, height)
+      drawNodes()
+      drawLinks()
+      frameId = requestAnimationFrame(step)
     }
-  }, [containerRef])
 
-  // Handle mouse leave
-  const handleMouseLeave = useCallback(() => {
-    hoveredNodeRef.current = null
-    // Reset mouse position to a far away point when mouse leaves
-    mouseRef.current = { x: -1000, y: -1000 }
-  }, [])
-
-  // Initialize
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const width = rect.width
-    const height = rect.height
-
-    // Generate initial nodes
-    nodesRef.current = generateNodes(width, height)
-    generateConnections(nodesRef.current)
-
-    // Start animation
-    animate()
-
-    // Add event listeners to container instead of canvas
-    const container = containerRef?.current
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove)
-      container.addEventListener('mouseenter', handleMouseEnter)
-      container.addEventListener('mouseleave', handleMouseLeave)
+    const start = () => {
+      if (frameId === null) frameId = requestAnimationFrame(step)
     }
+
+    const stop = () => {
+      if (frameId !== null) cancelAnimationFrame(frameId)
+      frameId = null
+    }
+
+    const rebuildNodes = () => {
+      nodes = generateNodes(width, height)
+      linkNodes(nodes)
+    }
+
+    const trackMouse = (event) => {
+      if (!container) return
+      const rect = container.getBoundingClientRect()
+      mouse = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    }
+
+    const onMouseMove = (event) => {
+      trackMouse(event)
+      hoveredNode = nodes.find((node) => (
+        distanceSquared(mouse.x, mouse.y, node.x, node.y) < (node.radius + HOVER_PADDING) ** 2
+      )) ?? null
+    }
+
+    const onMouseLeave = () => {
+      hoveredNode = null
+      mouse = { ...OFFSCREEN_MOUSE }
+    }
+
+    // The canvas is resized straight away so the next frame is not stretched,
+    // while the more expensive node layout is left until the resize settles.
+    const onViewportChange = () => {
+      if (!syncCanvasSize()) return
+      clearTimeout(resizeTimer)
+      resizeTimer = setTimeout(rebuildNodes, RESIZE_DEBOUNCE_MS)
+    }
+
+    syncCanvasSize()
+    rebuildNodes()
+    start()
+
+    // Nothing off screen needs animating, which keeps the loop off the CPU
+    // while the visitor reads the rest of the page.
+    const visibility = new IntersectionObserver(([entry]) => (entry.isIntersecting ? start() : stop()))
+    visibility.observe(canvas)
+
+    const resizeObserver = new ResizeObserver(onViewportChange)
+    resizeObserver.observe(canvas)
+
+    container?.addEventListener('mousemove', onMouseMove)
+    container?.addEventListener('mouseenter', trackMouse)
+    container?.addEventListener('mouseleave', onMouseLeave)
+    window.addEventListener('resize', onViewportChange)
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
-      }
-      if (container) {
-        container.removeEventListener('mousemove', handleMouseMove)
-        container.removeEventListener('mouseenter', handleMouseEnter)
-        container.removeEventListener('mouseleave', handleMouseLeave)
-      }
+      stop()
+      clearTimeout(resizeTimer)
+      visibility.disconnect()
+      resizeObserver.disconnect()
+      container?.removeEventListener('mousemove', onMouseMove)
+      container?.removeEventListener('mouseenter', trackMouse)
+      container?.removeEventListener('mouseleave', onMouseLeave)
+      window.removeEventListener('resize', onViewportChange)
     }
-  }, [generateNodes, generateConnections, animate, handleMouseMove, handleMouseEnter, handleMouseLeave])
-
-  // Handle resize
-  useEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current
-      if (!canvas) return
-
-      const rect = canvas.getBoundingClientRect()
-      const width = rect.width
-      const height = rect.height
-
-      // Regenerate nodes for new size
-      nodesRef.current = generateNodes(width, height)
-      generateConnections(nodesRef.current)
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [generateNodes, generateConnections])
+  }, [containerRef])
 
   return (
     <canvas
