@@ -130,10 +130,37 @@ html, body, #root {
 
 .katex-display {
   margin: 1.75rem auto;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .katex {
   font-size: 1rem;
+}
+
+.blog-markdown {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.pdf-article {
+  overflow-wrap: break-word;
+}
+
+.blog-markdown :not(pre) > code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.blog-markdown table {
+  width: 100%;
+}
+
+.blog-markdown .table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .katex .katex-html {

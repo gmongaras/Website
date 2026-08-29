@@ -153,15 +153,15 @@ const Article = ({ post, initialSection }) => {
         />
         <Header />
         <div className="section py-16 sm:py-24 pdf-page">
-          <div className="max-w-7xl mx-auto grid gap-8 lg:grid-cols-[260px_minmax(0,1024px)] pdf-grid">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 gap-8 lg:grid-cols-[260px_minmax(0,1024px)] pdf-grid">
             <ArticleToc
               headings={headings}
               postSlug={post.slug}
               onNavigateSection={handleNavigateSection}
               initialSection={initialSection}
             />
-            <div>
-              <article ref={articleRef} className="pdf-article prose prose-invert max-w-5xl mx-auto">
+            <div className="min-w-0 w-full">
+              <article ref={articleRef} className="pdf-article prose prose-invert max-w-5xl mx-auto min-w-0">
                 <header className="mb-10">
                   <h1 className="text-3xl sm:text-4xl font-bold mb-4">{post.title}</h1>
                   <div className="no-print mb-6">

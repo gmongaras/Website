@@ -2,7 +2,7 @@ const YouTubeEmbed = ({ videoId }) => {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`
 
   return (
-    <div className="pdf-block my-6">
+    <div className="pdf-block my-6 min-w-0 max-w-full">
       {/* 56.25% keeps the 16:9 box before the iframe has any content. */}
       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
         <iframe

@@ -55,10 +55,9 @@ const LazyImage = ({ src, alt, width, height, className, fallbackSrc, onError, .
   return (
     <div
       ref={wrapperRef}
-      className="pdf-image-frame relative mx-auto"
+      className="pdf-image-frame relative mx-auto w-full"
       style={{
-        width: width ? `${width}px` : '100%',
-        maxWidth: '100%',
+        maxWidth: width ? `${width}px` : '100%',
         aspectRatio: width && height ? `${width} / ${height}` : '16 / 9',
       }}
     >

@@ -10,14 +10,14 @@ const Figure = ({ alt, src, caption }) => {
   const dimensions = blogImageDimensions[src]
 
   return (
-    <div className="pdf-figure mb-4 my-4 text-center">
-      <div className="group relative block w-full overflow-visible rounded-lg p-2">
+    <div className="pdf-figure mb-4 my-4 text-center min-w-0 max-w-full">
+      <div className="relative overflow-visible rounded-lg">
         <LazyImage
           src={src}
           alt={alt}
           width={dimensions?.width}
           height={dimensions?.height}
-          className="max-w-full h-auto rounded-lg mx-auto shadow-lg transition-transform duration-300 ease-out group-hover:scale-105"
+          className="max-w-full h-auto rounded-lg mx-auto shadow-lg transition-transform duration-300 ease-out hover:scale-105"
         />
       </div>
       {caption ? (

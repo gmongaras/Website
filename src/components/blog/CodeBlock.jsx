@@ -35,8 +35,8 @@ const CodeBlock = ({ code, language = 'text' }) => {
   const displayCode = code.replace(/\\\\/g, '\\')
 
   return (
-    <div className="pdf-block my-6">
-      <div className="pdf-block-surface bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group">
+    <div className="pdf-block my-6 min-w-0 max-w-full">
+      <div className="pdf-block-surface bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group min-w-0">
         <div className="pdf-block-header flex items-center justify-between bg-gray-800 px-4 py-2 text-sm text-gray-300 border-b border-gray-700">
           <span className="font-mono">{language}</span>
           <button

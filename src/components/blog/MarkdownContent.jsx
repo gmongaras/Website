@@ -72,6 +72,11 @@ const COMPONENTS = {
   blockquote: ({ children }) => (
     <blockquote className="border-l-4 border-accent/50 pl-4 my-4 text-white/80">{children}</blockquote>
   ),
+  table: ({ children }) => (
+    <div className="table-scroll my-4">
+      <table>{children}</table>
+    </div>
+  ),
   // CodeBlock and YouTubeEmbed bring their own container, so <pre> is dropped.
   pre: ({ children }) => <>{children}</>,
   code: MarkdownCode,
