@@ -48,10 +48,10 @@ const HomePage = () => (
         <Skills />
         <Education />
         <Experience />
-        <Projects />
         <Publications />
-        <Media />
+        <Projects />
         <Blogs />
+        <Media />
         <Contact />
       </main>
       <Footer />

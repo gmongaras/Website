@@ -176,29 +176,5 @@ export const publications = [
   },
 ]
 
-export const articles = [
-  {
-    title: "Diffusion Models — DDPMs, DDIMs, and Classifier Free Guidance",
-    publisher: "Better Programming",
-    links: [
-      { label: "Article", href: "https://betterprogramming.pub/diffusion-models-ddpms-ddims-and-classifier-free-guidance-e07b297b2869" }
-    ]
-  },
-  {
-    title: "How Do Self-Attention Masks Work?",
-    publisher: "MLearning.ai",
-    links: [
-      { label: "Article", href: "https://medium.com/mlearning-ai/how-do-self-attention-masks-work-72ed9382510f" }
-    ]
-  },
-  {
-    title: "Coding A Virtual AI Girlfriend",
-    publisher: "MLearning.ai",
-    links: [
-      { label: "Article", href: "https://medium.com/mlearning-ai/coding-a-virtual-ai-girlfriend-f951e648aa46" }
-    ]
-  },
-]
-
 // Import YouTube videos from automatically generated file
 export { youtubeVideos } from './youtubeData.js';
