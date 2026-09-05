@@ -9,10 +9,10 @@ const NAV_ITEMS = [
   { href: '#skills', label: 'Skills', icon: Cpu },
   { href: '#education', label: 'Education', icon: GraduationCap },
   { href: '#experience', label: 'Experience', icon: Briefcase },
-  { href: '#projects', label: 'Projects', icon: Cpu },
   { href: '#publications', label: 'Publications', icon: BookOpen },
-  { href: '#media', label: 'Media', icon: BookOpen },
+  { href: '#projects', label: 'Projects', icon: Cpu },
   { href: '#blogs', label: 'Blogs', icon: BookAudio },
+  { href: '#media', label: 'Media', icon: BookOpen },
 ]
 
 const HOVER_PILL = 'radial-gradient(120% 140% at 50% 0%, rgba(59,0,102,0.22), rgba(59,0,102,0.12) 45%, transparent 70%)'
