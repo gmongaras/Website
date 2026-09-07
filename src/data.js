@@ -171,7 +171,7 @@ export const publications = [
       { label: "pdf", href: "/pubs/cottention.pdf" },
       { label: "Springer", href: "https://link.springer.com/book/10.1007/978-3-031-92602-0?sap-outbound-id=AD9F926E0AA16D13049BD2370EAFCAD37B0D3F1F" },
       { label: "arXiv", href: "https://arxiv.org/abs/2409.18747" },
-      { label: "Code", href: "github.com/gmongaras/Cottention_Transformer" },
+      { label: "Code", href: "https://github.com/gmongaras/Cottention_Transformer" },
     ]
   },
 ]
