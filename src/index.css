@@ -23,6 +23,30 @@ html, body, #root {
   overflow-x: clip;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cursorBlink {
+  50% { opacity: 0; }
+}
+
+.typing-cursor {
+  animation: cursorBlink 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-cursor {
+    animation: none;
+  }
+}
+
 /* Fancy gradient accents using the purple hue */
 .accent-gradient {
   background: var(--gradient-accent-bg);
@@ -47,6 +71,13 @@ html, body, #root {
 
 .section {
   @apply max-w-6xl mx-auto px-6 sm:px-8 lg:px-10;
+}
+
+/* Skip layout and paint work for home-page sections that are far below the
+   viewport. The remembered intrinsic size prevents jumps after first reveal. */
+.section[id] {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 640px;
 }
 
 .link {

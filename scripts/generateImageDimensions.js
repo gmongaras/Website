@@ -1,7 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const imageRoot = path.resolve('public/blogs/images')
+const imageRoots = [
+  path.resolve('public/blogs/images'),
+  path.resolve('public/optimized/blogs/images'),
+]
 const outputPath = path.resolve('src/blogImageDimensions.js')
 const dimensions = {}
 
@@ -73,7 +76,9 @@ function visit(directory) {
   }
 }
 
-visit(imageRoot)
+for (const imageRoot of imageRoots) {
+  if (fs.existsSync(imageRoot)) visit(imageRoot)
+}
 
 fs.writeFileSync(
   outputPath,

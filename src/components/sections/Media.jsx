@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import { ExternalLink } from 'lucide-react'
 import { FaYoutube } from 'react-icons/fa6'
 import { youtubeVideos } from '../../data'
@@ -200,22 +199,8 @@ const Media = () => {
     resortTimer.current = setTimeout(() => setIsSorting(false), RESORT_MS)
   }
 
-  // The row is mid-animation, so wheel scrolling over it is swallowed until the
-  // new order has settled.
-  useEffect(() => {
-    if (!isSorting) return
-
-    const blockWheel = (event) => {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-
-    document.addEventListener('wheel', blockWheel, { passive: false })
-    return () => document.removeEventListener('wheel', blockWheel)
-  }, [isSorting])
-
   return (
-    <section id="media" className="section py-14 sm:py-20 scroll-mt-20">
+    <section className="section py-14 sm:py-20">
       <SectionTitle icon={FaYoutube} title="Media" subtitle="Videos" />
 
       <SubsectionHeading icon={FaYoutube} title="YouTube">
@@ -225,37 +210,26 @@ const Media = () => {
       {/* The extra height and padding leave room for the cards' hover scale. */}
       <div className="relative" style={{ overflow: 'hidden', minHeight: '420px', padding: '10px 0' }}>
         <HorizontalScrollContainer ref={scrollContainerRef}>
-          <motion.div
-            className="flex gap-6"
-            initial={false}
-            animate={{ opacity: isSorting ? 0.3 : 1, scale: isSorting ? 0.95 : 1 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          <div
+            className={`flex gap-6 transition-[opacity,transform] duration-300 ${
+              isSorting ? 'scale-[0.98] opacity-40' : 'scale-100 opacity-100'
+            }`}
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={sortBy}
-                className="flex gap-6"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
+            {sortedVideos.map((video) => (
+              <div
+                key={video.videoId}
+                className="flex flex-shrink-0 min-w-0 max-w-80 snap-start transition-transform duration-200 hover:scale-[1.02]"
+                style={{
+                  width: '20rem',
+                  margin: '5px 0',
+                  contentVisibility: 'auto',
+                  containIntrinsicSize: '20rem 26rem',
+                }}
               >
-                {sortedVideos.map((video, index) => (
-                  <motion.div
-                    key={video.videoId}
-                    className="flex-shrink-0 w-80 flex min-w-0 max-w-80"
-                    style={{ margin: '5px 0' }}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: index * 0.05, ease: 'easeOut' }}
-                    whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-                  >
-                    <VideoCard video={video} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          </motion.div>
+                <VideoCard video={video} />
+              </div>
+            ))}
+          </div>
         </HorizontalScrollContainer>
       </div>
     </section>

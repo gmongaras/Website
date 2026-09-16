@@ -27,7 +27,7 @@ const Projects = () => {
   }
 
   return (
-    <section id="projects" className="section py-14 sm:py-20 scroll-mt-20">
+    <section className="section py-14 sm:py-20">
       <SectionTitle icon={Cpu} title="Projects" subtitle="Selected work" />
       <HorizontalScrollContainer>
         {projects.map((project) => (

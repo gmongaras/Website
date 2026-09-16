@@ -74,9 +74,7 @@ const LazyImage = ({ src, alt, width, height, className, fallbackSrc, onError, .
             {...props}
           />
           {!isLoaded && (
-            <div className="no-print absolute inset-0 bg-white/5 rounded-lg animate-pulse flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-            </div>
+            <div className="no-print absolute inset-0 rounded-lg bg-white/5" />
           )}
         </>
       )}

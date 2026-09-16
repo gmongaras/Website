@@ -11,18 +11,6 @@ export const blogImageDimensions = {
     "width": 879,
     "height": 341
   },
-  "/blogs/images/ai_girlfriend/4.gif": {
-    "width": 442,
-    "height": 380
-  },
-  "/blogs/images/ai_girlfriend/5.gif": {
-    "width": 394,
-    "height": 380
-  },
-  "/blogs/images/ai_girlfriend/6.gif": {
-    "width": 410,
-    "height": 410
-  },
   "/blogs/images/ai_girlfriend/7.webp": {
     "width": 351,
     "height": 33
@@ -207,10 +195,6 @@ export const blogImageDimensions = {
     "width": 529,
     "height": 60
   },
-  "/blogs/images/diffusion_models/13.gif": {
-    "width": 1182,
-    "height": 428
-  },
   "/blogs/images/diffusion_models/14.webp": {
     "width": 696,
     "height": 60
@@ -327,10 +311,6 @@ export const blogImageDimensions = {
     "width": 268,
     "height": 237
   },
-  "/blogs/images/diffusion_models/40.gif": {
-    "width": 819,
-    "height": 819
-  },
   "/blogs/images/diffusion_models/41.webp": {
     "width": 461,
     "height": 459
@@ -354,5 +334,25 @@ export const blogImageDimensions = {
   "/blogs/images/diffusion_models/9.webp": {
     "width": 1096,
     "height": 495
+  },
+  "/optimized/blogs/images/ai_girlfriend/4.gif": {
+    "width": 442,
+    "height": 380
+  },
+  "/optimized/blogs/images/ai_girlfriend/5.gif": {
+    "width": 394,
+    "height": 380
+  },
+  "/optimized/blogs/images/ai_girlfriend/6.gif": {
+    "width": 410,
+    "height": 410
+  },
+  "/optimized/blogs/images/diffusion_models/13.gif": {
+    "width": 1182,
+    "height": 428
+  },
+  "/optimized/blogs/images/diffusion_models/40.gif": {
+    "width": 819,
+    "height": 819
   }
 }

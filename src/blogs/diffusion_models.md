@@ -133,7 +133,7 @@ Part 4 of algorithm two may be a little confusing, and if you want to learn more
 
 Intuitively, the predicted noise theoretically removes all noise from the image at timestep $t$, making the image $x_0$ when the noise is removed. This is what the first term does in the sampling algorithm. In reality, that was just a prediction, and since the image is all noise, the output won't resemble any sort of image. So, we must add more noise back to the image, but at timestep $t-1$ and do this for all timesteps. The noise is re-added in term 2.
 
-![Diffusion Process Visualization](/blogs/images/diffusion_models/13.gif "https://learnopencv.com/image-generation-using-diffusion-models")
+![Diffusion Process Visualization](/optimized/blogs/images/diffusion_models/13.gif "https://learnopencv.com/image-generation-using-diffusion-models")
 
 ## Improving DDPMs
 
@@ -438,7 +438,7 @@ Finally, I am going to generate a batch of images with the following parameters:
 
 Below are nine random images on random classes I pulled from the 1,000 classes the models are trained on.
 
-![Generated Images Animation](/blogs/images/diffusion_models/40.gif "Generated Images Animation")
+![Generated Images Animation](/optimized/blogs/images/diffusion_models/40.gif "Generated Images Animation")
 
 ![Resulting images](/blogs/images/diffusion_models/41.webp "Resulting images")
 

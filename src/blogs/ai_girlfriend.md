@@ -282,17 +282,17 @@ Press enter or click to view image in full size
 
 The cycle can be generated in real-time using Gradio.
 
-![Blinking gif](/blogs/images/ai_girlfriend/4.gif "No dilation")
+![Blinking animation](/optimized/blogs/images/ai_girlfriend/4.gif "No dilation")
 
 I also added eye dilation as I thought it looked better.
 
-![Eye dilation gif](/blogs/images/ai_girlfriend/5.gif "With dilation")
+![Eye dilation animation](/optimized/blogs/images/ai_girlfriend/5.gif "With dilation")
 
 With the style vector, we can change all types of components of the image which I have documented [in my repo](https://github.com/gmongaras/AI_Girlfriend/blob/master/Img_Mover/Img_Mover.py).
 
 What happens if you randomly change all elements at once? I'm glad you asked.
 
-![errrrrmmmm?](/blogs/images/ai_girlfriend/5.gif)
+![errrrrmmmm?](/optimized/blogs/images/ai_girlfriend/6.gif)
 
 {{code(python)}}
 # Let's initialize the object to allow the image to move

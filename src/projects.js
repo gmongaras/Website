@@ -4,7 +4,7 @@ export const projects = [
     name: "2Mamba2Furious",
     date: "May 2025 - March 2026",
     desc: "Code for my paper \"2Mamba2Furious: Linear in complexity, competitive in accuracy\" ",
-    image: "/projects/2mamba2furious.png",
+    image: "/optimized/projects/2mamba2furious.png",
     skills: [ "Transformers", "Pretraining", "Linear attention", "Research", ],
     links: [
       { label: "Code", href: "https://github.com/gmongaras/2Mamba2Furious" }

@@ -104,7 +104,7 @@ def get_video_info(url, description_length=200):
                 'title': title,
                 'description': description,
                 'videoId': video_id,
-                'thumbnail': f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+                'thumbnail': f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
                 'duration': duration,
                 'publishedAt': published_at,
                 'views': views_formatted,

@@ -1,23 +1,25 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import { posts } from './blogs'
+import { loadPost, posts } from './blogs'
 import { parseBlogHash } from './lib/blogHash'
 import { scrollToHash } from './lib/dom'
 import Header from './components/Header'
 import SEO from './components/SEO'
+import DeferredSection from './components/ui/DeferredSection'
 import Hero from './components/sections/Hero'
 import Skills from './components/sections/Skills'
 import Education from './components/sections/Education'
 import Experience from './components/sections/Experience'
-import Projects from './components/sections/Projects'
 import Publications from './components/sections/Publications'
-import Media from './components/sections/Media'
 import Blogs from './components/sections/Blogs'
 import Contact from './components/sections/Contact'
 import Footer from './components/sections/Footer'
 
 // Article rendering pulls in the markdown and maths toolchain, which the home
 // page never needs, so it is fetched only when a post is opened.
-const BlogPost = lazy(() => import('./components/blog/BlogPost'))
+const loadBlogPostComponent = () => import('./components/blog/BlogPost')
+const BlogPost = lazy(loadBlogPostComponent)
+const Projects = lazy(() => import('./components/sections/Projects'))
+const Media = lazy(() => import('./components/sections/Media'))
 
 // Anchors are only in the DOM after the sections have mounted.
 const ANCHOR_SCROLL_DELAY_MS = 100
@@ -32,6 +34,14 @@ const readRoute = () => {
     section: parsed.section,
   }
 }
+
+const DeferredHomeSection = ({ id, children }) => (
+  <DeferredSection id={id}>
+    <Suspense fallback={<div style={{ minHeight: 640 }} />}>
+      {children}
+    </Suspense>
+  </DeferredSection>
+)
 
 const HomePage = () => (
   <div className="min-h-screen flex flex-col">
@@ -49,15 +59,51 @@ const HomePage = () => (
         <Education />
         <Experience />
         <Publications />
-        <Projects />
+        <DeferredHomeSection id="projects">
+          <Projects />
+        </DeferredHomeSection>
         <Blogs />
-        <Media />
+        <DeferredHomeSection id="media">
+          <Media />
+        </DeferredHomeSection>
         <Contact />
       </main>
       <Footer />
     </div>
   </div>
 )
+
+const BlogRoute = ({ metadata, initialSection }) => {
+  const [post, setPost] = useState(metadata ? undefined : null)
+
+  useEffect(() => {
+    let isCurrent = true
+
+    if (!metadata) {
+      setPost(null)
+      return () => { isCurrent = false }
+    }
+
+    setPost(undefined)
+    Promise.all([loadPost(metadata.slug), loadBlogPostComponent()])
+      .then(([loadedPost]) => {
+        if (isCurrent) setPost(loadedPost)
+      })
+      .catch(() => {
+        if (isCurrent) setPost(null)
+      })
+
+    return () => { isCurrent = false }
+  }, [metadata])
+
+  if (post === undefined) return <div className="min-h-screen" />
+
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <BlogPost post={post} initialSection={initialSection} />
+    </Suspense>
+  )
+}
 
 /**
  * The site is one static page, so the "route" is just the location hash:
@@ -79,26 +125,31 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [route])
 
-  // Warm the article chunk while the visitor reads the home page, so opening a
-  // post does not wait on a download.
+  // Keep article navigation instant without competing with the initial page
+  // load. Slow and data-saver connections retain true on-demand loading.
   useEffect(() => {
     if (route.isBlog) return
 
-    const prefetch = () => { import('./components/blog/BlogPost') }
-    const supportsIdle = typeof window.requestIdleCallback === 'function'
-    const handle = supportsIdle ? window.requestIdleCallback(prefetch) : setTimeout(prefetch, 2000)
+    const connection = navigator.connection
+    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return
 
-    return () => {
-      if (supportsIdle) window.cancelIdleCallback(handle)
-      else clearTimeout(handle)
+    const prefetchArticles = () => {
+      Promise.allSettled([
+        loadBlogPostComponent(),
+        ...posts.map((post) => loadPost(post.slug)),
+      ])
     }
+
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(prefetchArticles, { timeout: 2500 })
+      return () => window.cancelIdleCallback(handle)
+    }
+
+    const timer = setTimeout(prefetchArticles, 1200)
+    return () => clearTimeout(timer)
   }, [route.isBlog])
 
   if (!route.isBlog) return <HomePage />
 
-  return (
-    <Suspense fallback={<div className="min-h-screen" />}>
-      <BlogPost post={route.post} initialSection={route.section} />
-    </Suspense>
-  )
+  return <BlogRoute metadata={route.post} initialSection={route.section} />
 }

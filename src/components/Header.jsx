@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
 import { BookAudio, BookOpen, Briefcase, ChevronDown, Cpu, GraduationCap, Mail, Menu, X } from 'lucide-react'
-import { posts } from '../blogs'
+import { loadPost, posts } from '../blogs'
+import { nextPaint } from '../lib/dom'
 import MotionLinkBtn from './ui/MotionLinkBtn'
 
 const NAV_ITEMS = [
@@ -35,6 +35,12 @@ const navigateTo = (href) => {
   } else {
     document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
   }
+}
+
+const closeMobileMenuAndNavigate = (event, href, onClose) => {
+  event.preventDefault()
+  onClose()
+  nextPaint().then(() => navigateTo(href))
 }
 
 const HoverPill = () => (
@@ -106,6 +112,8 @@ const BlogsNavMenu = ({ label }) => {
                 key={post.slug}
                 href={`#blog/${post.slug}`}
                 onClick={(event) => { event.preventDefault(); navigateTo(`#blog/${post.slug}`) }}
+                onPointerEnter={() => { loadPost(post.slug).catch(() => {}) }}
+                onFocus={() => { loadPost(post.slug).catch(() => {}) }}
                 className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm"
               >
                 <div className="font-medium text-white/90 truncate">{post.title}</div>
@@ -129,28 +137,22 @@ const BlogsNavMenu = ({ label }) => {
 
 const MobileNavSheet = ({ onClose }) => (
   <>
-    <motion.div
+    <div
       key="backdrop"
       aria-label="Close menu"
       role="button"
       tabIndex={0}
       onClick={onClose}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onClose() }}
-      className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm pointer-events-auto cursor-pointer"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm pointer-events-auto cursor-pointer animate-[fadeIn_150ms_ease-out]"
     />
 
-    <motion.nav
+    <nav
       key="sheet"
       id="mobile-nav"
       role="dialog"
       aria-modal="true"
-      className="fixed z-[9999] top-[72px] left-3 right-3 rounded-2xl border border-white/10 bg-black/90 p-4 shadow-2xl pointer-events-auto"
-      initial={{ y: -20, opacity: 0, scale: 0.98 }}
-      animate={{ y: 0, opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 320, damping: 24 } }}
-      exit={{ y: -12, opacity: 0, scale: 0.98 }}
+      className="fixed z-[9999] top-[72px] left-3 right-3 rounded-2xl border border-white/10 bg-black/90 p-4 shadow-2xl pointer-events-auto animate-[menuIn_180ms_ease-out]"
     >
       <div className="flex items-center justify-between mb-2">
         <span className="font-semibold tracking-wide" style={{ color: 'var(--accent)' }}>Navigate</span>
@@ -170,7 +172,7 @@ const MobileNavSheet = ({ onClose }) => (
           <li key={href}>
             <a
               href={href}
-              onClick={(event) => { event.preventDefault(); onClose(); navigateTo(href) }}
+              onClick={(event) => closeMobileMenuAndNavigate(event, href, onClose)}
               className="group flex items-center gap-3 py-3"
             >
               <div className="p-2 rounded-xl bg-accent/20 ring-1 ring-white/10">
@@ -188,7 +190,7 @@ const MobileNavSheet = ({ onClose }) => (
       <div className="mt-3 grid grid-cols-1 gap-2">
         <a
           href="#contact"
-          onClick={(event) => { event.preventDefault(); onClose(); navigateTo('#contact') }}
+          onClick={(event) => closeMobileMenuAndNavigate(event, '#contact', onClose)}
           className="btn btn-primary relative overflow-hidden group min-h-[44px] text-[15px] sm:text-sm whitespace-nowrap"
         >
           <span className="relative z-10 flex items-center gap-2">
@@ -197,7 +199,7 @@ const MobileNavSheet = ({ onClose }) => (
           </span>
         </a>
       </div>
-    </motion.nav>
+    </nav>
   </>
 )
 
@@ -206,7 +208,13 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 0)
+    let lastScrolled
+    const onScroll = () => {
+      const nextScrolled = window.scrollY > 0
+      if (nextScrolled === lastScrolled) return
+      lastScrolled = nextScrolled
+      setScrolled(nextScrolled)
+    }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -234,9 +242,11 @@ const Header = () => {
       <div className="section py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2 tracking-wide hover:opacity-90">
           <img
-            src="/favicon.ico"
+            src="/optimized/icon-full.png"
             alt="Icon"
             loading="eager"
+            fetchPriority="high"
+            decoding="sync"
             className="h-10 w-10 md:h-16 md:w-16 rounded-md object-cover shadow-sm"
           />
         </a>
@@ -265,14 +275,11 @@ const Header = () => {
             className="md:hidden relative inline-flex items-center justify-center p-2 rounded-xl ring-1
                        transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
           >
-            <motion.span
-              initial={false}
-              animate={{ rotate: menuOpen ? 90 : 0, scale: menuOpen ? 1.05 : 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              className="flex"
+            <span
+              className={`flex transition-transform duration-200 ${menuOpen ? 'rotate-90 scale-105' : ''}`}
             >
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </motion.span>
+            </span>
           </button>
         </div>
       </div>
@@ -282,11 +289,8 @@ const Header = () => {
         style={{ opacity: scrolled ? 1 : 0, background: 'var(--gradient-header-fade)', filter: 'blur(12px)' }}
       />
 
-      {/* Kept mounted so the sheet can animate out as well as in. */}
       {createPortal(
-        <AnimatePresence>
-          {menuOpen && <MobileNavSheet key="mobile-nav" onClose={() => setMenuOpen(false)} />}
-        </AnimatePresence>,
+        menuOpen ? <MobileNavSheet key="mobile-nav" onClose={() => setMenuOpen(false)} /> : null,
         document.body,
       )}
     </header>

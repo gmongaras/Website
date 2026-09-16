@@ -14,7 +14,6 @@ const TypingAnimation = () => {
   const [phraseIndex, setPhraseIndex] = useState(0)
   const [typed, setTyped] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
-  const [showCursor, setShowCursor] = useState(true)
 
   useEffect(() => {
     const phrase = TYPING_PHRASES[phraseIndex]
@@ -41,11 +40,6 @@ const TypingAnimation = () => {
     return () => clearTimeout(timer)
   }, [typed, phraseIndex, isDeleting])
 
-  useEffect(() => {
-    const blink = setInterval(() => setShowCursor((visible) => !visible), 500)
-    return () => clearInterval(blink)
-  }, [])
-
   return (
     <div className="text-3xl sm:text-5xl font-bold tracking-tight">
       <span className="text-white">Hello there. I am...</span>
@@ -53,7 +47,7 @@ const TypingAnimation = () => {
       <span style={{ color: 'var(--accent)' }}>
         {typed}
         <span
-          className={`inline-block w-0.5 h-8 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`}
+          className="typing-cursor inline-block w-0.5 h-8 ml-1"
           style={{ backgroundColor: 'var(--accent)' }}
         />
       </span>
@@ -69,9 +63,12 @@ const ProfilePhoto = () => (
       style={{ background: 'var(--gradient-pfp)' }}
     />
     <img
-      src="/me.jpg"
+      src="/optimized/me.jpg"
       alt="Portrait of Gabriel Mongaras"
+      width="884"
+      height="946"
       loading="eager"
+      fetchPriority="high"
       decoding="async"
       className="relative w-full aspect-square object-cover rounded-2xl ring-1 ring-white/10 shadow-2xl"
     />
