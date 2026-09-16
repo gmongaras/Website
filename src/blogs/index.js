@@ -30,7 +30,6 @@ export const posts = [
 ]
 
 const postLoaders = {
-  moe: () => import('./on_the_importance_of_moe_router_tie_breaking.js'),
   'diffusion-models': () => import('./diffusion_models.js'),
   'attn-masks': () => import('./attn_masks.js'),
   'ai-girlfriend': () => import('./ai_girlfriend.js'),
