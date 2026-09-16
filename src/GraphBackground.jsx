@@ -10,6 +10,7 @@ const MAX_LINK_DISTANCE = 80
 const MAX_LINKS_PER_NODE = 6
 const MAX_PIXEL_RATIO = 1.5
 const FRAME_INTERVAL_MS = 1000 / 30
+const PHYSICS_STEPS_PER_FRAME = 2
 
 const MOUSE_INFLUENCE_RADIUS = 120
 const MOUSE_PULL = 0.2
@@ -210,43 +211,45 @@ const GraphBackground = ({ containerRef }) => {
       const influenceSquared = MOUSE_INFLUENCE_RADIUS ** 2
 
       for (const node of nodes) {
-        const toMouseX = mouse.x - node.x
-        const toMouseY = mouse.y - node.y
-        const toOriginX = node.originalX - node.x
-        const toOriginY = node.originalY - node.y
+        for (let physicsStep = 0; physicsStep < PHYSICS_STEPS_PER_FRAME; physicsStep += 1) {
+          const toMouseX = mouse.x - node.x
+          const toMouseY = mouse.y - node.y
+          const toOriginX = node.originalX - node.x
+          const toOriginY = node.originalY - node.y
 
-        const mouseGap = toMouseX ** 2 + toMouseY ** 2
-        const originGap = toOriginX ** 2 + toOriginY ** 2
+          const mouseGap = toMouseX ** 2 + toMouseY ** 2
+          const originGap = toOriginX ** 2 + toOriginY ** 2
 
-        // Drift toward the pointer, but only while still near home, so the
-        // graph never unravels.
-        if (mouseGap < influenceSquared && originGap < influenceSquared) {
-          const mouseDistance = Math.sqrt(mouseGap) || 1
-          const force = (MOUSE_INFLUENCE_RADIUS - mouseDistance) / MOUSE_INFLUENCE_RADIUS
-          const pull = (force * MOUSE_PULL) / mouseDistance
-          node.vx += toMouseX * pull
-          node.vy += toMouseY * pull
-        } else {
-          node.vx += toOriginX * RETURN_FORCE + Math.sin(node.pulsePhase * 0.37) * IDLE_JITTER
-          node.vy += toOriginY * RETURN_FORCE + Math.cos(node.pulsePhase * 0.41) * IDLE_JITTER
+          // Drift toward the pointer, but only while still near home, so the
+          // graph never unravels.
+          if (mouseGap < influenceSquared && originGap < influenceSquared) {
+            const mouseDistance = Math.sqrt(mouseGap) || 1
+            const force = (MOUSE_INFLUENCE_RADIUS - mouseDistance) / MOUSE_INFLUENCE_RADIUS
+            const pull = (force * MOUSE_PULL) / mouseDistance
+            node.vx += toMouseX * pull
+            node.vy += toMouseY * pull
+          } else {
+            node.vx += toOriginX * RETURN_FORCE + Math.sin(node.pulsePhase * 0.37) * IDLE_JITTER
+            node.vy += toOriginY * RETURN_FORCE + Math.cos(node.pulsePhase * 0.41) * IDLE_JITTER
+          }
+
+          node.x += node.vx
+          node.y += node.vy
+
+          if (node.x < 0 || node.x > width) node.vx *= EDGE_BOUNCE
+          if (node.y < 0 || node.y > height) node.vy *= EDGE_BOUNCE
+
+          node.x = Math.min(Math.max(node.x, 0), width)
+          node.y = Math.min(Math.max(node.y, 0), height)
+
+          node.vx *= DAMPING
+          node.vy *= DAMPING
+
+          node.pulsePhase += PULSE_SPEED
+          const hoverBoost = hoveredNode === node ? 1.8 : 0
+          const targetRadius = node.baseRadius + hoverBoost + Math.sin(node.pulsePhase) * PULSE_AMPLITUDE
+          node.radius += (targetRadius - node.radius) * RADIUS_EASING
         }
-
-        node.x += node.vx
-        node.y += node.vy
-
-        if (node.x < 0 || node.x > width) node.vx *= EDGE_BOUNCE
-        if (node.y < 0 || node.y > height) node.vy *= EDGE_BOUNCE
-
-        node.x = Math.min(Math.max(node.x, 0), width)
-        node.y = Math.min(Math.max(node.y, 0), height)
-
-        node.vx *= DAMPING
-        node.vy *= DAMPING
-
-        node.pulsePhase += PULSE_SPEED
-        const hoverBoost = hoveredNode === node ? 1.8 : 0
-        const targetRadius = node.baseRadius + hoverBoost + Math.sin(node.pulsePhase) * PULSE_AMPLITUDE
-        node.radius += (targetRadius - node.radius) * RADIUS_EASING
 
         // Scaling the transform puts the shared unit gradient exactly where a
         // per-node gradient would have been.
