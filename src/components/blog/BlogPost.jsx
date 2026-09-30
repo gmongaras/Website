@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Download, Loader2 } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { nextPaint } from '../../lib/dom'
 import { extractHeadings } from '../../lib/markdown'
 import Header from '../Header'
@@ -7,6 +7,11 @@ import SEO from '../SEO'
 import { PrintModeContext } from '../PrintModeContext'
 import ArticleToc from './ArticleToc'
 import MarkdownContent from './MarkdownContent'
+
+const isCompilePdf = () => (
+  typeof window !== 'undefined'
+  && new URLSearchParams(window.location.search).has('compilePdf')
+)
 
 const SITE_URL = 'https://gmongaras.me'
 
@@ -51,39 +56,50 @@ const BlogPostNotFound = () => (
 )
 
 /**
- * Drives the vector PDF export. `progress` doubles as the "in flight" flag,
- * and the exporter itself is only downloaded when the button is used.
+ * Headless PDF compilation loads `?compilePdf` and expects the finished
+ * data-URI on `window.__compiledPdf`. The build script waits on that flag.
  */
-const usePdfExport = (articleRef, title) => {
-  const [progress, setProgress] = useState(null)
-  const [failed, setFailed] = useState(false)
-  const isExporting = progress !== null
+const useCompilePdf = (articleRef, post) => {
+  const compiling = isCompilePdf()
 
-  const start = useCallback(async () => {
-    if (isExporting || !articleRef.current) return
+  useEffect(() => {
+    if (!compiling) return
 
-    setFailed(false)
-    setProgress(0)
+    window.__compiledPdf = { status: 'pending', slug: post.slug }
+    let cancelled = false
 
-    try {
-      // Print mode is already on at this point, so a single paint is enough for
-      // every lazy image to be in the DOM before the article is cloned.
-      await nextPaint()
-      const { exportArticlePdf } = await import('../../pdf/exportArticlePdf')
-      await exportArticlePdf({
-        article: articleRef.current,
-        fileName: toPdfFileName(title),
-        onProgress: setProgress,
-      })
-    } catch (error) {
-      console.error('Failed to export article as PDF:', error)
-      setFailed(true)
-    } finally {
-      setProgress(null)
+    const run = async () => {
+      try {
+        while (!cancelled && !articleRef.current?.querySelector('.blog-markdown')) {
+          await nextPaint()
+        }
+        if (cancelled || !articleRef.current) return
+
+        await nextPaint()
+        const { exportArticlePdf } = await import('../../pdf/exportArticlePdf')
+        const dataUrl = await exportArticlePdf({
+          article: articleRef.current,
+          fileName: toPdfFileName(post.title),
+          returnBytes: true,
+        })
+        if (!cancelled) window.__compiledPdf = { status: 'ready', slug: post.slug, dataUrl }
+      } catch (error) {
+        console.error('Failed to compile article PDF:', error)
+        if (!cancelled) {
+          window.__compiledPdf = {
+            status: 'error',
+            slug: post.slug,
+            message: String(error?.message || error),
+          }
+        }
+      }
     }
-  }, [articleRef, isExporting, title])
 
-  return { progress, failed, isExporting, start }
+    run()
+    return () => { cancelled = true }
+  }, [articleRef, compiling, post.slug, post.title])
+
+  return compiling
 }
 
 // Mirrors the browser's own print dialog into print mode, so Ctrl+P produces
@@ -123,7 +139,7 @@ const useBrowserPrintMode = () => {
 const Article = ({ post, initialSection }) => {
   const articleRef = useRef(null)
   const isPrinting = useBrowserPrintMode()
-  const pdf = usePdfExport(articleRef, post.title)
+  const compilingPdf = useCompilePdf(articleRef, post)
 
   const headings = useMemo(() => extractHeadings(post.body), [post.body])
   const structuredData = useMemo(() => buildStructuredData(post), [post])
@@ -141,7 +157,7 @@ const Article = ({ post, initialSection }) => {
   }, [post.slug])
 
   return (
-    <PrintModeContext.Provider value={isPrinting || pdf.isExporting}>
+    <PrintModeContext.Provider value={isPrinting || compilingPdf}>
       <div className="min-h-screen">
         <SEO
           title={post.title}
@@ -165,17 +181,15 @@ const Article = ({ post, initialSection }) => {
                 <header className="mb-10">
                   <h1 className="text-3xl sm:text-4xl font-bold mb-4">{post.title}</h1>
                   <div className="no-print mb-6">
-                    <button
-                      type="button"
-                      onClick={pdf.start}
-                      disabled={pdf.isExporting}
-                      className="btn text-sm disabled:cursor-wait"
+                    <a
+                      href={`/blogs/pdfs/${post.slug}.pdf`}
+                      download={`${toPdfFileName(post.title)}.pdf`}
+                      className="btn text-sm"
                       title="Download this article as a PDF"
                     >
-                      {pdf.isExporting
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> {Math.round(pdf.progress * 100)}%</>
-                        : <><Download className="w-4 h-4" /> {pdf.failed ? 'Retry PDF' : 'PDF'}</>}
-                    </button>
+                      <Download className="w-4 h-4" />
+                      PDF
+                    </a>
                   </div>
                   {subtitle ? <p className="max-w-3xl text-white/70 mb-6">{subtitle}</p> : null}
                   <div className="flex flex-wrap items-center gap-4 text-sm text-white/60 mb-6">

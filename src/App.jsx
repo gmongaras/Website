@@ -130,6 +130,8 @@ export default function App() {
   useEffect(() => {
     if (route.isBlog) return
 
+    if (new URLSearchParams(window.location.search).has('compilePdf')) return
+
     const connection = navigator.connection
     if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return
 

@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "predev": "npm run optimize-media && npm run generate-image-dimensions",
-    "prebuild": "npm run optimize-media && npm run generate-image-dimensions",
+    "predev": "npm run optimize-media && npm run generate-image-dimensions && npm run generate-article-pdfs",
+    "prebuild": "npm run optimize-media && npm run generate-image-dimensions && npm run generate-article-pdfs",
     "preview": "vite preview",
     "optimize-media": "node scripts/optimizeMedia.js",
     "generate-image-dimensions": "node scripts/generateImageDimensions.js",
+    "generate-article-pdfs": "node scripts/generateArticlePdfs.js",
     "generate-sitemap": "node scripts/generateSitemap.js",
     "generate-og-image": "python scripts/generateOGImage.py"
   },
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
+    "playwright": "^1.63.0",
     "postcss": "^8.4.45",
     "sharp": "^0.35.4",
     "tailwindcss": "^3.4.12",

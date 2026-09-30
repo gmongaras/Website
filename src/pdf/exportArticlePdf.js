@@ -159,7 +159,7 @@ const drawText = (pdf, op, y, katexFonts) => {
   }
 }
 
-export const exportArticlePdf = async ({ article, fileName, onProgress }) => {
+export const exportArticlePdf = async ({ article, fileName, onProgress, returnBytes = false }) => {
   const report = (value) => onProgress && onProgress(Math.min(1, Math.max(0, value)))
 
   report(0.02)
@@ -262,6 +262,11 @@ export const exportArticlePdf = async ({ article, fileName, onProgress }) => {
       }
 
       report(0.6 + 0.38 * ((page + 1) / pageCount))
+    }
+
+    if (returnBytes) {
+      report(1)
+      return pdf.output('datauristring')
     }
 
     pdf.save(`${fileName}.pdf`)

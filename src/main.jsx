@@ -4,10 +4,13 @@ import { HelmetProvider } from 'react-helmet-async'
 import './index.css'
 import App from './App.jsx'
 
+const compilingPdf = new URLSearchParams(window.location.search).has('compilePdf')
+const app = (
+  <HelmetProvider>
+    <App />
+  </HelmetProvider>
+)
+
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <HelmetProvider>
-      <App />
-    </HelmetProvider>
-  </StrictMode>,
+  compilingPdf ? app : <StrictMode>{app}</StrictMode>,
 )
