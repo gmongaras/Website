@@ -183,9 +183,10 @@ const Article = ({ post, initialSection }) => {
                   <div className="no-print mb-6">
                     <a
                       href={`/blogs/pdfs/${post.slug}.pdf`}
-                      download={`${toPdfFileName(post.title)}.pdf`}
+                      target="_blank"
+                      rel="noreferrer"
                       className="btn text-sm"
-                      title="Download this article as a PDF"
+                      title="Open this article as a PDF"
                     >
                       <Download className="w-4 h-4" />
                       PDF
