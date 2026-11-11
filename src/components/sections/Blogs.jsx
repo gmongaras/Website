@@ -1,38 +1,57 @@
-import { BookAudio, ExternalLink } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { loadPost, posts } from '../../blogs'
-import Card from '../ui/Card'
-import ExpandableList from '../ui/ExpandableList'
-import SectionTitle from '../ui/SectionTitle'
+import { formatDate } from '../../lib/formatDate'
+
+const prefetch = (slug) => {
+  loadPost(slug).catch(() => {})
+}
+
+const PostLink = ({ post }) => (
+  <a
+    href={`#blog/${post.slug}`}
+    onPointerEnter={() => prefetch(post.slug)}
+    onFocus={() => prefetch(post.slug)}
+    className="group grid grid-cols-1 gap-2 rounded-2xl px-3 py-5 transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:items-start sm:gap-x-6 sm:px-4 sm:py-7"
+  >
+    <time dateTime={post.date} className="text-sm text-white/50 sm:pt-1">
+      {formatDate(post.date)}
+    </time>
+
+    <div className="min-w-0">
+      <h2 className="text-lg font-semibold leading-snug tracking-tight transition-colors group-hover:text-[var(--accent)] sm:text-xl">
+        {post.title}
+      </h2>
+      <p className="mt-2 text-sm text-white/70 sm:text-base">{post.excerpt}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {post.tags.map((tag) => (
+          <span key={tag} className="chip px-2.5 py-0.5 text-xs">{tag}</span>
+        ))}
+      </div>
+    </div>
+
+    <ArrowUpRight
+      aria-hidden
+      className="hidden h-5 w-5 text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent)] sm:block"
+    />
+  </a>
+)
 
 const Blogs = () => (
-  <section id="blogs" className="section py-14 sm:py-20 scroll-mt-20">
-    <SectionTitle icon={BookAudio} title="Blogs" subtitle="Thoughts & insights" />
-    <ExpandableList className="space-y-4">
+  <section className="section py-10 sm:py-16">
+    <header className="max-w-2xl">
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">Blogs</h1>
+      <p className="mt-4 text-base text-white/70 sm:text-lg">
+        Blogs on stuff I am learning about or just want to yap about.
+      </p>
+    </header>
+
+    <ol className="mt-6 divide-y divide-white/10 border-y border-white/10 sm:mt-10">
       {posts.map((post) => (
-        <Card key={post.slug} className="gap-5 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold break-words">{post.title}</h3>
-            <p className="mt-1 text-sm text-white/50">{post.date}</p>
-            <p className="mt-3 text-white/80 break-words">{post.excerpt}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {post.tags.map((tag) => <span key={tag} className="chip text-xs">{tag}</span>)}
-            </div>
-          </div>
-          <a
-            href={`#blog/${post.slug}`}
-            className="btn flex min-h-11 shrink-0 items-center justify-center gap-2 sm:self-center"
-            onPointerEnter={() => { loadPost(post.slug).catch(() => {}) }}
-            onFocus={() => { loadPost(post.slug).catch(() => {}) }}
-            // The blog view renders at the current scroll offset, so the
-            // page is sent back to the top as the hash changes.
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          >
-            Read More
-            <ExternalLink className="w-4 h-4" />
-          </a>
-        </Card>
+        <li key={post.slug}>
+          <PostLink post={post} />
+        </li>
       ))}
-    </ExpandableList>
+    </ol>
   </section>
 )
 

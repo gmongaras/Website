@@ -4,11 +4,7 @@ import { parseBlogHash } from './lib/blogHash'
 import { scrollToHash } from './lib/dom'
 import Header from './components/Header'
 import SEO from './components/SEO'
-import DeferredSection from './components/ui/DeferredSection'
 import Hero from './components/sections/Hero'
-import Skills from './components/sections/Skills'
-import Education from './components/sections/Education'
-import Experience from './components/sections/Experience'
 import Publications from './components/sections/Publications'
 import Blogs from './components/sections/Blogs'
 import Contact from './components/sections/Contact'
@@ -19,58 +15,108 @@ import Footer from './components/sections/Footer'
 const loadBlogPostComponent = () => import('./components/blog/BlogPost')
 const BlogPost = lazy(loadBlogPostComponent)
 const Projects = lazy(() => import('./components/sections/Projects'))
-const Media = lazy(() => import('./components/sections/Media'))
 
 // Anchors are only in the DOM after the sections have mounted.
 const ANCHOR_SCROLL_DELAY_MS = 100
 
 const readRoute = () => {
-  const parsed = parseBlogHash(window.location.hash)
-  if (!parsed?.slug) return { isBlog: false, post: null, section: null }
-
-  return {
-    isBlog: true,
-    post: posts.find((post) => post.slug === parsed.slug) ?? null,
-    section: parsed.section,
+  const hash = window.location.hash
+  const parsed = parseBlogHash(hash)
+  if (parsed?.slug) {
+    return {
+      page: 'blog',
+      post: posts.find((post) => post.slug === parsed.slug) ?? null,
+      section: parsed.section,
+    }
   }
+
+  if (hash === '#blogs') return { page: 'blogs', post: null, section: null }
+  if (hash === '#research' || hash === '#publications') return { page: 'research', post: null, section: null }
+  if (hash === '#projects') return { page: 'projects', post: null, section: null }
+  return { page: 'home', post: null, section: null }
 }
 
-const DeferredHomeSection = ({ id, children }) => (
-  <DeferredSection id={id}>
-    <Suspense fallback={<div style={{ minHeight: 640 }} />}>
-      {children}
-    </Suspense>
-  </DeferredSection>
+const PageFrame = ({ seo, children, fill = false, below = null }) => (
+  <div className={fill ? undefined : 'min-h-screen flex flex-col'}>
+    {seo}
+    {fill ? (
+      <>
+        <Header />
+        <main className="flex min-h-[calc(100vh-4.5rem)] flex-col md:min-h-[calc(100vh-6rem)]">{children}</main>
+        {below}
+        <Footer />
+      </>
+    ) : (
+      <>
+        <Header />
+        <div className="flex-1 relative">
+          <main>{children}</main>
+          <Footer />
+        </div>
+      </>
+    )}
+  </div>
 )
 
 const HomePage = () => (
-  <div className="min-h-screen flex flex-col">
-    <SEO
-      title="Gabriel Mongaras — AI Engineer & Researcher"
-      description="AI Engineer & Researcher focused on diffusion models, attention mechanisms, and efficient AI systems. Experience at Etched, Google, Amazon, and Meta."
-      keywords={['AI Engineer', 'Machine Learning', 'Diffusion Models', 'Neural Networks', 'Research', 'PyTorch', 'Transformers']}
-      url="/"
-    />
-    <Header />
-    <div className="flex-1 relative">
-      <main>
-        <Hero />
-        <Skills />
-        <Education />
-        <Experience />
-        <Publications />
-        <DeferredHomeSection id="projects">
-          <Projects />
-        </DeferredHomeSection>
-        <Blogs />
-        <DeferredHomeSection id="media">
-          <Media />
-        </DeferredHomeSection>
-        <Contact />
-      </main>
-      <Footer />
-    </div>
-  </div>
+  <PageFrame
+    seo={(
+      <SEO
+        title="Gabriel Mongaras — AI Engineer & Researcher"
+        description="AI Engineer & Researcher focused on diffusion models, attention mechanisms, and efficient AI systems. Experience at Etched, Google, Amazon, and Meta."
+        keywords={['AI Engineer', 'Machine Learning', 'Diffusion Models', 'Neural Networks', 'Research', 'PyTorch', 'Transformers']}
+        url="/"
+      />
+    )}
+    fill
+    below={<Contact />}
+  >
+    <Hero />
+  </PageFrame>
+)
+
+const BlogsPage = () => (
+  <PageFrame
+    seo={(
+      <SEO
+        title="Blogs"
+        description="Notes on models, attention, and the details in between."
+        url="/#blogs"
+      />
+    )}
+  >
+    <Blogs />
+  </PageFrame>
+)
+
+const ResearchPage = () => (
+  <PageFrame
+    seo={(
+      <SEO
+        title="Research"
+        description="Papers on attention, and the thesis behind them."
+        url="/#research"
+      />
+    )}
+  >
+    <Publications />
+  </PageFrame>
+)
+
+const ProjectsPage = () => (
+  <PageFrame
+    seo={(
+      <SEO
+        title="Projects"
+        description="Code from papers, kernels, and experiments."
+        url="/#projects"
+      />
+    )}
+  >
+    <Suspense fallback={<div className="section py-16" />}>
+      <Projects />
+    </Suspense>
+  </PageFrame>
 )
 
 const BlogRoute = ({ metadata, initialSection }) => {
@@ -106,8 +152,8 @@ const BlogRoute = ({ metadata, initialSection }) => {
 }
 
 /**
- * The site is one static page, so the "route" is just the location hash:
- * "#blog/<slug>" opens an article, anything else is a home page anchor.
+ * "#blog/<slug>" opens an article. "#blogs", "#research", and "#projects"
+ * are separate pages. Resume links straight to the PDF. No hash is home.
  */
 export default function App() {
   const [route, setRoute] = useState(readRoute)
@@ -115,20 +161,28 @@ export default function App() {
   useEffect(() => {
     const onHashChange = () => setRoute(readRoute())
     window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
+    window.addEventListener('popstate', onHashChange)
+    return () => {
+      window.removeEventListener('hashchange', onHashChange)
+      window.removeEventListener('popstate', onHashChange)
+    }
   }, [])
 
   useEffect(() => {
-    if (route.isBlog) return
+    if (route.page === 'blog') return
 
-    const timer = setTimeout(() => scrollToHash(window.location.hash), ANCHOR_SCROLL_DELAY_MS)
-    return () => clearTimeout(timer)
+    if (window.location.hash === '#contact') {
+      const timer = setTimeout(() => scrollToHash('#contact'), ANCHOR_SCROLL_DELAY_MS)
+      return () => clearTimeout(timer)
+    }
+
+    window.scrollTo({ top: 0 })
   }, [route])
 
   // Keep article navigation instant without competing with the initial page
   // load. Slow and data-saver connections retain true on-demand loading.
   useEffect(() => {
-    if (route.isBlog) return
+    if (route.page === 'blog') return
 
     if (new URLSearchParams(window.location.search).has('compilePdf')) return
 
@@ -149,9 +203,12 @@ export default function App() {
 
     const timer = setTimeout(prefetchArticles, 1200)
     return () => clearTimeout(timer)
-  }, [route.isBlog])
+  }, [route.page])
 
-  if (!route.isBlog) return <HomePage />
+  if (route.page === 'blogs') return <BlogsPage />
+  if (route.page === 'research') return <ResearchPage />
+  if (route.page === 'projects') return <ProjectsPage />
+  if (route.page === 'blog') return <BlogRoute metadata={route.post} initialSection={route.section} />
 
-  return <BlogRoute metadata={route.post} initialSection={route.section} />
+  return <HomePage />
 }

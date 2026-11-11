@@ -2,10 +2,11 @@
 
 Time to totally not vibecode a website >w<
 
-A single-page portfolio and technical blog built with React, Vite and Tailwind,
-deployed to GitHub Pages at [gmongaras.me](https://gmongaras.me). Articles are
-written in Markdown with LaTeX and can be exported as real, text-based PDFs
-straight from the browser.
+A portfolio and technical blog built with React, Vite and Tailwind, deployed
+to GitHub Pages at [gmongaras.me](https://gmongaras.me). One build serves home,
+blogs, research, and projects through the URL hash. Articles are written in
+Markdown with LaTeX and can be exported as real, text-based PDFs straight from
+the browser.
 
 ## Getting started
 
@@ -19,38 +20,58 @@ npm run build    # outputs to dist/
 npm run preview  # serve dist/ locally
 ```
 
-`predev` and `prebuild` regenerate `src/blogImageDimensions.js`, so both
-commands work from a clean checkout without any extra steps.
+`predev` and `prebuild` copy media, write `src/blogImageDimensions.js`, and
+generate article PDFs, so both commands work from a clean checkout without any
+extra steps. `prebuild` also rewrites `public/sitemap.xml` from the registered
+posts. The GitHub Pages workflow runs that build on every push to `main`, so
+the published sitemap stays in sync even if the committed file is stale.
 
 ## Layout
 
 ```
 src/
-  App.jsx                 Hash routing and the home page composition
+  App.jsx                 Hash routes for home, blogs, research, projects, articles
   data.js                 Profile, education, skills, experience, publications
-  projects.js             Project cards
+  projects.js             Project list
   youtubeData.js          Generated — see scripts/GetYoutueData.py
   blogImageDimensions.js  Generated — see scripts/generateImageDimensions.js
   blogs/                  One .md article plus a .js file of metadata each
   components/
     Header.jsx            Sticky nav, blog hover menu, mobile sheet
     SEO.jsx               Per-view meta tags, Open Graph and JSON-LD
-    sections/             The home page sections, one file each
+    sections/             One file per page section. See Pages below.
     blog/                 Article view, table of contents, markdown renderers
-    ui/                   Cards, buttons, lazy images, horizontal card rows
+    ui/                   Cards, buttons, lazy images, and the media scroller
   lib/                    Markdown, hash parsing and date helpers
   pdf/                    Vector PDF exporter for articles
   GraphBackground.jsx     Animated node graph behind the hero
 scripts/                  Content generators (see below)
 ```
 
+## Pages
+
+| Hash | What it shows |
+| --- | --- |
+| *(none)* | Home. The graph fills the screen, and contact info sits below it. |
+| `#blogs` | Blog index |
+| `#research` | Papers. `#publications` opens the same page. |
+| `#projects` | Projects |
+| `#blog/<slug>` | An article. `#blog/<slug>/<heading-id>` opens one section of it. |
+
+Resume links to `/Resume.pdf` and opens in a new tab. It is not a route.
+
+Skills, education, experience, and the YouTube media section are still in the
+source, with their data, and are not mounted on a page.
+
 ## Editing content
 
 | What | Where |
 | --- | --- |
-| Name, links, summary, contact details | `src/data.js` |
-| Education, skills, experience, publications, articles | `src/data.js` |
-| Project cards | `src/projects.js` |
+| Name, links, summary, contact details | `src/data.js` (`profile`) |
+| Publications | `src/data.js` (`publications`) |
+| Education, skills, experience | `src/data.js` (kept; not on a page right now) |
+| YouTube videos | `src/youtubeData.js` (kept; Media is not mounted) |
+| Projects | `src/projects.js` |
 | Blog posts | `src/blogs/` |
 
 ### Adding a blog post
@@ -78,7 +99,8 @@ scripts/                  Content generators (see below)
 4. Put images under `public/blogs/images/<name>/` and reference them as
    `/blogs/images/<name>/1.webp`. Run `npm run generate-image-dimensions` so
    their size is known ahead of load and nothing shifts on the page.
-5. Run `npm run generate-sitemap`.
+
+The next production build regenerates the sitemap from `src/blogs/index.js`.
 
 ### Article syntax
 
@@ -113,12 +135,12 @@ styles in `src/index.css`.
 | Command | Purpose |
 | --- | --- |
 | `npm run generate-image-dimensions` | Scans `public/blogs/images` and writes `src/blogImageDimensions.js` |
-| `npm run generate-sitemap` | Writes `public/sitemap.xml` from the registered posts |
+| `npm run generate-sitemap` | Writes `public/sitemap.xml` from the registered posts. `prebuild` runs this, so every deploy does too. |
 | `npm run generate-og-image` | Regenerates `public/og-image.png` (Python) |
 
 `scripts/GetYoutubeURLs.py` and `scripts/GetYoutueData.py` refresh
-`src/youtubeData.js`, which powers the Media section. `scripts/projects.ipynb`
-was used to bootstrap `src/projects.js`.
+`src/youtubeData.js` for the Media section, which is not currently mounted.
+`scripts/projects.ipynb` was used to bootstrap `src/projects.js`.
 
 ## Theming
 

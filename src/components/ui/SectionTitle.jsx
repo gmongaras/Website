@@ -1,7 +1,7 @@
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
-  <div className="flex items-center justify-between mb-6">
-    <div className="flex items-center gap-3">
-      <div className="p-2 rounded-xl bg-accent/30 border border-accent/40">
+  <div className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="shrink-0 p-2 rounded-xl bg-accent/30 border border-accent/40">
         <Icon className="w-5 h-5" />
       </div>
       <h2 className="text-xl sm:text-2xl font-semibold">{title}</h2>

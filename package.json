@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "predev": "npm run optimize-media && npm run generate-image-dimensions && npm run generate-article-pdfs",
-    "prebuild": "npm run optimize-media && npm run generate-image-dimensions && npm run generate-article-pdfs",
+    "prebuild": "npm run optimize-media && npm run generate-image-dimensions && npm run generate-article-pdfs && npm run generate-sitemap",
     "preview": "vite preview",
     "optimize-media": "node scripts/optimizeMedia.js",
     "generate-image-dimensions": "node scripts/generateImageDimensions.js",

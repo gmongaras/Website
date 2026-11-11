@@ -3,7 +3,7 @@ export const projects = [
   {
     name: "2Mamba2Furious",
     date: "May 2025 - March 2026",
-    desc: "Code for my paper \"2Mamba2Furious: Linear in complexity, competitive in accuracy\" ",
+    desc: "Code for my paper \"2Mamba2Furious: Linear in complexity, competitive in accuracy\"",
     image: "/optimized/projects/2mamba2furious.png",
     skills: [ "Transformers", "Pretraining", "Linear attention", "Research", ],
     links: [
@@ -13,7 +13,7 @@ export const projects = [
   {
     name: "On the Expressiveness of Softmax Attention",
     date: "2025-03-29",
-    desc: "Code for my paper \"On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective\" ",
+    desc: "Code for my paper \"On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective\"",
     image: "/projects/on_the_expressiveness_of_sm_attn.png",
     skills: [ "Transformers", "Pretraining", "Linear attention", "Research", ],
     links: [
@@ -23,7 +23,7 @@ export const projects = [
   {
     name: "Stable Diffusion 3 From Scratch",
     date: "2024-12-21",
-    desc: "Code for bulding and training stable diffusion 3 from scratch as well as data collection / curation for training.",
+    desc: "Code for building and training stable diffusion 3 from scratch as well as data collection / curation for training.",
     image: "/projects/stable_diffusion_3_from_scratch.png",
     skills: [ "Diffusion models", "Pretraining", "Parallel computing", "Data collection" ],
     links: [
@@ -51,7 +51,7 @@ export const projects = [
     ]
   },
   {
-    name: "GRPO DAPO Tests ",
+    name: "GRPO DAPO Tests",
     date: "2025-04-08",
     desc: "Tests for RLHFing a llama model with GRPO and DAPO.",
     image: "/projects/grpo_dapo_tests_.jpg",
@@ -103,9 +103,9 @@ export const projects = [
   {
     name: "Image Gradient Thing",
     date: "2025-01-01",
-    desc: "Some weird thing I made s.t. videos are composed of moving lines following the graidnet of the video",
+    desc: "Some weird thing I made s.t. videos are composed of moving lines following the gradient of the video",
     image: "/projects/image_gradient_thing.gif",
-    skills: [ "Python", "Video processng" ],
+    skills: [ "Python", "Video processing" ],
     links: [
       { label: "Code", href: "https://github.com/gmongaras/Image_Gradient_Thing" }
     ]
@@ -141,7 +141,7 @@ export const projects = [
     ]
   },
   {
-    name: "Learnable Rotary Embedings",
+    name: "Learnable Rotary Embeddings",
     date: "2024-10-21",
     desc: "Experiment I did to test out what would happen if I made rotary embeddings learnable.",
     image: "/projects/learnable_rotary_embeddings.webp",
@@ -175,7 +175,7 @@ export const projects = [
     date: "2024-03-10",
     desc: "Some RL experiments I did to learn RL.",
     image: "/projects/cart_pole_ppo.png",
-    skills: [ "Reinforcement learning", "PPO"  ],
+    skills: [ "Reinforcement learning", "PPO" ],
     links: [
       { label: "Code", href: "https://github.com/gmongaras/Reinforcement_Learning_Stuff" }
     ]
@@ -183,7 +183,7 @@ export const projects = [
   {
     name: "Yann LeCun Bot",
     date: "2024-01-24",
-    desc: "Scraped Twitter (X) for Yann LeCun data ad turned him into a bot.",
+    desc: "Scraped Twitter (X) for Yann LeCun data and turned him into a bot.",
     image: "/projects/yann_lecun.webp",
     skills: [ "Finetuning", "RLHF", "Scraping" ],
     links: [
@@ -223,7 +223,7 @@ export const projects = [
   {
     name: "Diffusion Models From Scratch",
     date: "2022-09-10",
-    desc: "Created a diffusion model from scratch back when U-net were cool",
+    desc: "Created a diffusion model from scratch back when U-nets were cool",
     image: "/projects/diffusion_models_from_scratch.png",
     skills: [ "Diffusion models", "Pixel diffusion", "U-net", "Model training" ],
     links: [
@@ -273,7 +273,7 @@ export const projects = [
   {
     name: "Vision Transformers From Scratch",
     date: "2022-03-01",
-    desc: "Build a ViT from scratch to do image classification",
+    desc: "Built a ViT from scratch to do image classification",
     image: "/projects/vision_transformers_from_scratch.jpg",
     skills: [ "Pretraining", "Image classification", "Transformers" ],
     links: [
@@ -313,9 +313,9 @@ export const projects = [
   {
     name: "Gradient Descent From Scratch",
     date: "2021-07-30",
-    desc: "Build a basic classification neural network and built the autograd \"engine\" from scratch in numpy, no torch.",
+    desc: "Built a basic classification neural network and built the autograd \"engine\" from scratch in numpy, no torch.",
     image: "/projects/gradient_descent_for_bce_loss.jpg",
-    skills: [ "Gradient decent", "Autograd" ],
+    skills: [ "Gradient descent", "Autograd" ],
     links: [
       { label: "Code", href: "https://github.com/gmongaras/Visualizing_Gradient_Descent_For_BCE_Loss" }
     ]

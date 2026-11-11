@@ -41,7 +41,7 @@ const TypingAnimation = () => {
   }, [typed, phraseIndex, isDeleting])
 
   return (
-    <div className="text-3xl sm:text-5xl font-bold tracking-tight">
+    <div className="text-3xl sm:text-5xl font-bold tracking-tight break-words">
       <span className="text-white">Hello there. I am...</span>
       <br />
       <span style={{ color: 'var(--accent)' }}>
@@ -63,10 +63,10 @@ const ProfilePhoto = () => (
       style={{ background: 'var(--gradient-pfp)' }}
     />
     <img
-      src="/optimized/me.jpg"
+      src="/optimized/me3.jpg"
       alt="Portrait of Gabriel Mongaras"
-      width="884"
-      height="946"
+      width="1094"
+      height="1094"
       loading="eager"
       fetchPriority="high"
       decoding="async"
@@ -110,9 +110,9 @@ const Hero = () => {
   const heroRef = useRef(null)
 
   return (
-    <div ref={heroRef} className="accent-gradient border-b border-white/10 relative overflow-hidden">
+    <div ref={heroRef} className="accent-gradient relative flex min-h-min flex-1 flex-col overflow-hidden border-b border-white/10">
       <GraphBackground containerRef={heroRef} />
-      <div className="section py-16 sm:py-24 relative z-10">
+      <div className="section relative z-10 flex flex-1 items-center py-16 sm:py-24">
         <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-2">
             <NeedleInAHaystack />

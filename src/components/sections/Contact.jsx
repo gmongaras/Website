@@ -50,20 +50,12 @@ const CenteredCardSlot = ({ children }) => (
 )
 
 const Contact = () => (
-  <section id="contact" className="relative scroll-mt-20">
-    <div
-      aria-hidden
-      className="pointer-events-none absolute -inset-24 opacity-40 blur-3xl"
-      style={{ overflowX: 'clip', overflowY: 'visible', isolation: 'isolate' }}
-    />
-    <div className="section relative z-10 py-16 sm:py-24">
+  <section id="contact" className="scroll-mt-20">
+    <div className="section py-16 sm:py-24">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-2xl sm:text-3xl font-semibold leading-tight">
-          Let’s build something together<span style={{ color: 'var(--accent)' }}>.</span>
+          Contact info
         </h2>
-        <p className="mt-3 text-white/70">
-          Email, call, or connect on socials, use whatever's easiest.
-        </p>
       </div>
 
       <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

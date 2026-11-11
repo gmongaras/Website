@@ -23,6 +23,11 @@ html, body, #root {
   overflow-x: clip;
 }
 
+/* Always reserve the bar so short pages stay the same width as long ones. */
+html {
+  overflow-y: scroll;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -71,13 +76,6 @@ html, body, #root {
 
 .section {
   @apply max-w-6xl mx-auto px-6 sm:px-8 lg:px-10;
-}
-
-/* Skip layout and paint work for home-page sections that are far below the
-   viewport. The remembered intrinsic size prevents jumps after first reveal. */
-.section[id] {
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto 640px;
 }
 
 .link {

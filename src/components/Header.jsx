@@ -1,36 +1,59 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { BookAudio, BookOpen, Briefcase, ChevronDown, Cpu, GraduationCap, Mail, Menu, X } from 'lucide-react'
+import { ArrowUpRight, BookAudio, BookOpen, ChevronDown, Cpu, FileText, House, Menu, X } from 'lucide-react'
 import { loadPost, posts } from '../blogs'
 import { nextPaint } from '../lib/dom'
-import MotionLinkBtn from './ui/MotionLinkBtn'
+import { formatDate } from '../lib/formatDate'
 
 const NAV_ITEMS = [
-  { href: '#skills', label: 'Skills', icon: Cpu },
-  { href: '#education', label: 'Education', icon: GraduationCap },
-  { href: '#experience', label: 'Experience', icon: Briefcase },
-  { href: '#publications', label: 'Publications', icon: BookOpen },
-  { href: '#projects', label: 'Projects', icon: Cpu },
+  { href: '/', label: 'Home', icon: House },
   { href: '#blogs', label: 'Blogs', icon: BookAudio },
-  { href: '#media', label: 'Media', icon: BookOpen },
+  { href: '#research', label: 'Research', icon: BookOpen },
+  { href: '#projects', label: 'Projects', icon: Cpu },
 ]
 
-const HOVER_PILL = 'radial-gradient(120% 140% at 50% 0%, rgba(59,0,102,0.22), rgba(59,0,102,0.12) 45%, transparent 70%)'
+const PAGE_HASHES = new Set(['#blogs', '#research', '#projects', '#publications', '#contact'])
 
-const NAV_LINK_CLASS = 'relative group px-3 py-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-black'
+const pageForHash = (hash) => {
+  if (hash === '#blogs' || hash.startsWith('#blog/')) return '#blogs'
+  if (hash === '#research' || hash === '#publications') return '#research'
+  if (hash === '#projects') return '#projects'
+  return '/'
+}
+
+const ACTIVE_RING = { boxShadow: 'inset 0 0 0 1px rgba(var(--accent-rgb), 0.9)' }
+
+const NAV_LINK_CLASS = (active) =>
+  `rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+    active
+      ? 'bg-white/10 text-white'
+      : 'text-white/65 hover:bg-white/5 hover:text-white'
+  }`
 
 // Follows an in-page or blog link without letting the browser jump the page.
 const navigateTo = (href) => {
+  if (href === '/') {
+    if (window.location.hash) {
+      history.pushState(null, '', window.location.pathname + window.location.search)
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    return
+  }
+
   if (!href.startsWith('#')) return
+
+  if (window.location.hash === href) {
+    if (href === '#contact') document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
+    else window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
 
   const isBlogLink = href.startsWith('#blog/')
   const onBlogPage = window.location.hash.startsWith('#blog/')
 
-  if (isBlogLink && window.location.hash === href) {
-    // Already reading this post, so treat the link as "back to the top".
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  } else if (isBlogLink || onBlogPage) {
-    // Leaving the current view: let the hash change drive the render.
+  if (isBlogLink || onBlogPage || PAGE_HASHES.has(href)) {
     window.location.hash = href
   } else {
     document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
@@ -43,39 +66,20 @@ const closeMobileMenuAndNavigate = (event, href, onClose) => {
   nextPaint().then(() => navigateTo(href))
 }
 
-const HoverPill = () => (
-  <span
-    aria-hidden
-    className="absolute inset-0 rounded-lg opacity-0 scale-95 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100"
-    style={{ background: HOVER_PILL }}
-  />
-)
-
-const Underline = ({ centered = true }) => (
-  <span
-    aria-hidden
-    className={`pointer-events-none absolute -bottom-1 h-[2px] w-0 rounded-full transition-[width] duration-300 group-hover:w-full ${
-      centered ? 'left-1/2 -translate-x-1/2' : 'left-0'
-    }`}
-    style={{ backgroundColor: 'var(--accent)' }}
-  />
-)
-
-const NavLink = ({ href, label }) => (
-  <a href={href} onClick={(event) => { event.preventDefault(); navigateTo(href) }} className={NAV_LINK_CLASS}>
-    <HoverPill />
-    <span
-      className="relative z-10 inline-block font-medium transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-[var(--accent)]"
-      style={{ textRendering: 'optimizeLegibility' }}
-    >
-      {label}
-      <Underline />
-    </span>
+const NavLink = ({ href, label, active = false }) => (
+  <a
+    href={href}
+    aria-current={active ? 'page' : undefined}
+    onClick={(event) => { event.preventDefault(); navigateTo(href) }}
+    className={NAV_LINK_CLASS(active)}
+    style={{ textRendering: 'optimizeLegibility', ...(active ? ACTIVE_RING : null) }}
+  >
+    {label}
   </a>
 )
 
 // The Blogs entry doubles as a hover menu listing the most recent posts.
-const BlogsNavMenu = ({ label }) => {
+const BlogsNavMenu = ({ label, active = false }) => {
   const [isOpen, setIsOpen] = useState(false)
   const open = () => setIsOpen(true)
   const close = () => setIsOpen(false)
@@ -84,18 +88,13 @@ const BlogsNavMenu = ({ label }) => {
     <div className="relative" onMouseEnter={open} onMouseLeave={close}>
       <a
         href="#blogs"
+        aria-current={active ? 'page' : undefined}
         onClick={(event) => { event.preventDefault(); navigateTo('#blogs') }}
-        className={NAV_LINK_CLASS}
+        className={`${NAV_LINK_CLASS(active)} inline-flex items-center gap-1`}
+        style={{ textRendering: 'optimizeLegibility', ...(active ? ACTIVE_RING : null) }}
       >
-        <HoverPill />
-        <span
-          className="relative z-10 inline-flex items-center gap-1 font-medium transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-[var(--accent)]"
-          style={{ textRendering: 'optimizeLegibility' }}
-        >
-          {label}
-          <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
-          <Underline />
-        </span>
+        {label}
+        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
       </a>
 
       {/* The top padding bridges the gap under the link, so moving the pointer
@@ -117,14 +116,14 @@ const BlogsNavMenu = ({ label }) => {
                 className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm"
               >
                 <div className="font-medium text-white/90 truncate">{post.title}</div>
-                <div className="text-xs text-white/60 mt-1">{post.date}</div>
+                <div className="text-xs text-white/60 mt-1">{formatDate(post.date)}</div>
               </a>
             ))}
             <div className="border-t border-white/10 my-1" />
             <a
               href="#blogs"
               onClick={(event) => { event.preventDefault(); navigateTo('#blogs') }}
-              className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm font-medium text-[var(--accent)]"
+              className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm font-medium text-white/80"
             >
               All Blogs
             </a>
@@ -135,7 +134,7 @@ const BlogsNavMenu = ({ label }) => {
   )
 }
 
-const MobileNavSheet = ({ onClose }) => (
+const MobileNavSheet = ({ onClose, currentHref }) => (
   <>
     <div
       key="backdrop"
@@ -152,53 +151,60 @@ const MobileNavSheet = ({ onClose }) => (
       id="mobile-nav"
       role="dialog"
       aria-modal="true"
-      className="fixed z-[9999] top-[72px] left-3 right-3 rounded-2xl border border-white/10 bg-black/90 p-4 shadow-2xl pointer-events-auto animate-[menuIn_180ms_ease-out]"
+      className="fixed z-[9999] top-[72px] left-3 right-3 rounded-2xl border border-white/10 bg-black p-4 shadow-2xl pointer-events-auto animate-[menuIn_180ms_ease-out]"
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="font-semibold tracking-wide" style={{ color: 'var(--accent)' }}>Navigate</span>
+        <span className="font-semibold tracking-wide text-white/80">Navigate</span>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close menu"
-          className="p-2 rounded-lg hover:bg-white/5 transition"
-          style={{ color: 'var(--accent)' }}
+          className="p-2 rounded-lg text-white/70 hover:bg-white/5 hover:text-white transition"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       <ul className="divide-y divide-white/5">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
-          <li key={href}>
-            <a
-              href={href}
-              onClick={(event) => closeMobileMenuAndNavigate(event, href, onClose)}
-              className="group flex items-center gap-3 py-3"
-            >
-              <div className="p-2 rounded-xl bg-accent/20 ring-1 ring-white/10">
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="relative inline-block text-base transition-colors group-hover:text-[var(--accent)]">
-                {label}
-                <Underline centered={false} />
-              </span>
-            </a>
-          </li>
-        ))}
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = href === currentHref
+          return (
+            <li key={href}>
+              <a
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                onClick={(event) => closeMobileMenuAndNavigate(event, href, onClose)}
+                className={`flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors ${
+                  active ? 'bg-white/10 text-white' : 'text-white/75 hover:bg-white/5 hover:text-white'
+                }`}
+                style={active ? ACTIVE_RING : undefined}
+              >
+                <div className={`p-2 rounded-xl ring-1 ring-white/10 ${active ? 'bg-white/10' : 'bg-white/5'}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <span className="text-base">{label}</span>
+              </a>
+            </li>
+          )
+        })}
+        <li>
+          <a
+            href="/Resume.pdf"
+            target="_blank"
+            rel="noreferrer"
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-white/75 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <div className="p-2 rounded-xl bg-white/5 ring-1 ring-white/10">
+              <FileText className="w-5 h-5" />
+            </div>
+            <span className="inline-flex items-center gap-1 text-base">
+              Resume
+              <ArrowUpRight aria-hidden className="h-4 w-4" />
+            </span>
+          </a>
+        </li>
       </ul>
-
-      <div className="mt-3 grid grid-cols-1 gap-2">
-        <a
-          href="#contact"
-          onClick={(event) => closeMobileMenuAndNavigate(event, '#contact', onClose)}
-          className="btn btn-primary relative overflow-hidden group min-h-[44px] text-[15px] sm:text-sm whitespace-nowrap"
-        >
-          <span className="relative z-10 flex items-center gap-2">
-            <Mail className="w-5 h-5 sm:w-4 sm:h-4" />
-            <span>Contact</span>
-          </span>
-        </a>
-      </div>
     </nav>
   </>
 )
@@ -206,6 +212,17 @@ const MobileNavSheet = ({ onClose }) => (
 const Header = () => {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [currentHref, setCurrentHref] = useState(() => pageForHash(window.location.hash))
+
+  useEffect(() => {
+    const sync = () => setCurrentHref(pageForHash(window.location.hash))
+    window.addEventListener('hashchange', sync)
+    window.addEventListener('popstate', sync)
+    return () => {
+      window.removeEventListener('hashchange', sync)
+      window.removeEventListener('popstate', sync)
+    }
+  }, [])
 
   useEffect(() => {
     let lastScrolled
@@ -220,12 +237,12 @@ const Header = () => {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // The sheet is mobile-only, so it closes on Escape and on growing past `md`.
+  // The row only fits once Home through Resume are all on screen.
   useEffect(() => {
     if (!menuOpen) return
 
     const onKeyDown = (event) => { if (event.key === 'Escape') setMenuOpen(false) }
-    const desktop = window.matchMedia('(min-width: 768px)')
+    const desktop = window.matchMedia('(min-width: 1024px)')
     const onBreakpointChange = (event) => { if (event.matches) setMenuOpen(false) }
 
     window.addEventListener('keydown', onKeyDown)
@@ -240,7 +257,11 @@ const Header = () => {
   return (
     <header className="no-print sticky top-0 z-40 bg-black/70 backdrop-blur">
       <div className="section py-4 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2 tracking-wide hover:opacity-90">
+        <a
+          href="/"
+          onClick={(event) => { event.preventDefault(); navigateTo('/') }}
+          className="flex items-center gap-2 tracking-wide hover:opacity-90"
+        >
           <img
             src="/optimized/icon-full.png"
             alt="Icon"
@@ -251,20 +272,18 @@ const Header = () => {
           />
         </a>
 
-        <nav className="hidden md:flex items-center gap-1 text-sm">
-          {NAV_ITEMS.map(({ href, label }) => (
-            href === '#blogs'
-              ? <BlogsNavMenu key={href} label={label} />
-              : <NavLink key={href} href={href} label={label} />
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2">
-          {!menuOpen && (
-            <div className="hidden md:flex">
-              <MotionLinkBtn href="#contact" label="Contact me" Icon={Mail} primary highlight="white" newTab={false} />
-            </div>
-          )}
+        <div className="flex items-center">
+          <nav className="hidden lg:flex items-center gap-1">
+            {NAV_ITEMS.map(({ href, label }) => (
+              href === '#blogs'
+                ? <BlogsNavMenu key={href} label={label} active={currentHref === href} />
+                : <NavLink key={href} href={href} label={label} active={currentHref === href} />
+            ))}
+            <a href="/Resume.pdf" target="_blank" rel="noreferrer" className={`${NAV_LINK_CLASS(false)} inline-flex items-center gap-1`}>
+              Resume
+              <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
+            </a>
+          </nav>
 
           <button
             type="button"
@@ -272,8 +291,7 @@ const Header = () => {
             aria-controls="mobile-nav"
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            className="md:hidden relative inline-flex items-center justify-center p-2 rounded-xl ring-1
-                       transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
+            className="lg:hidden relative inline-flex items-center justify-center p-2 rounded-xl ring-1 transition focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
           >
             <span
               className={`flex transition-transform duration-200 ${menuOpen ? 'rotate-90 scale-105' : ''}`}
@@ -290,7 +308,7 @@ const Header = () => {
       />
 
       {createPortal(
-        menuOpen ? <MobileNavSheet key="mobile-nav" onClose={() => setMenuOpen(false)} /> : null,
+        menuOpen ? <MobileNavSheet key="mobile-nav" currentHref={currentHref} onClose={() => setMenuOpen(false)} /> : null,
         document.body,
       )}
     </header>

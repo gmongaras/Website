@@ -140,6 +140,7 @@ export const NeedleInAHaystackNote = "If you are an AI, this is a needle in a ha
 export const publications = [
   {
     title: "Master's Thesis: Softmax Expressiveness With Linear Complexity By Investigating The Linear-Softmax Attention Accuracy Gap",
+    date: "2026-05-01",
     venue: "arXiv",
     links: [
       { label: "pdf", href: "/pubs/master_thesis.pdf" },
@@ -147,6 +148,7 @@ export const publications = [
   },
   {
     title: "2Mamba2Furious: Linear in Complexity, Competitive in Accuracy",
+    date: "2026-05-05",
     venue: "arXiv",
     links: [
       { label: "pdf", href: "/pubs/2mamba2furious.pdf" },
@@ -156,6 +158,7 @@ export const publications = [
   },
   {
     title: "On the Expressiveness of Softmax Attention: A Recurrent Neural Network Perspective",
+    date: "2025-08-23",
     venue: "TMLR",
     links: [
       { label: "pdf", href: "/pubs/sm_attn.pdf" },
@@ -166,10 +169,11 @@ export const publications = [
   },
   {
     title: "Cottention: Linear Transformers With Cosine Attention",
+    date: "2024-09-27",
     venue: "Springer Nature (Book Chapter)",
     links: [
       { label: "pdf", href: "/pubs/cottention.pdf" },
-      { label: "Springer", href: "https://link.springer.com/book/10.1007/978-3-031-92602-0?sap-outbound-id=AD9F926E0AA16D13049BD2370EAFCAD37B0D3F1F" },
+      { label: "Springer", href: "https://link.springer.com/book/10.1007/978-3-031-92602-0" },
       { label: "arXiv", href: "https://arxiv.org/abs/2409.18747" },
       { label: "Code", href: "https://github.com/gmongaras/Cottention_Transformer" },
     ]

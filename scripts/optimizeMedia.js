@@ -55,7 +55,7 @@ const generateIcons = async () => {
 }
 
 await Promise.all([
-  copyOriginal('me.jpg'),
+  copyOriginal('me3.jpg'),
   copyOriginal('projects', '2mamba2furious.png'),
   copyOriginal('blogs', 'images', 'diffusion_models', '13.gif'),
   copyOriginal('blogs', 'images', 'diffusion_models', '40.gif'),

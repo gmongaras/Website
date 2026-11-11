@@ -73,6 +73,6 @@ After completing the setup, you should see:
 
 ## 📝 Maintenance
 
-- Run `npm run generate-sitemap` when adding new blog posts
+- The production build regenerates `public/sitemap.xml` from the registered posts, including the GitHub Pages deploy on every push to `main`
 - Update meta descriptions and keywords as needed
 - Monitor and fix any structured data errors in Search Console
