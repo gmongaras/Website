@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { buildTocTree, renderHeadingMathHtml } from '../../lib/markdown'
 
@@ -15,6 +15,7 @@ const isPlainClick = (event) =>
 const TocLink = ({ heading, postSlug, isActive, onSelect, className = '' }) => (
   <a
     href={`#blog/${postSlug}/${heading.slug}`}
+    data-toc={heading.slug}
     className={`toc-link ${isActive ? 'active' : ''} ${className}`}
     aria-current={isActive ? 'location' : undefined}
     onClick={(event) => {
@@ -31,8 +32,9 @@ const TocLink = ({ heading, postSlug, isActive, onSelect, className = '' }) => (
  * Sidebar contents for an article. Level-2 headings are collapsible sections
  * and the entry matching the reader's position is highlighted as they scroll.
  */
-const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) => {
+const ArticleToc = ({ title, headings, postSlug, onNavigateSection, initialSection }) => {
   const sections = useMemo(() => buildTocTree(headings), [headings])
+  const navRef = useRef(null)
   const [collapsed, setCollapsed] = useState({})
   const [activeSlug, setActiveSlug] = useState(initialSection)
 
@@ -53,7 +55,7 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
 
       const limit = activationLine()
       const current = elements.filter((el) => el.getBoundingClientRect().top <= limit).at(-1)
-      setActiveSlug(current?.id ?? elements[0].id)
+      setActiveSlug(current?.id ?? null)
     }
 
     const onScroll = () => {
@@ -71,6 +73,40 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
     }
   }, [allSlugs])
 
+  // A collapsed section has to open before its active child can be scrolled into view.
+  useEffect(() => {
+    if (!activeSlug) return
+    const parent = sections.find((section) => section.children.some((child) => child.slug === activeSlug))
+    if (!parent || !collapsed[parent.slug]) return
+    setCollapsed((state) => ({ ...state, [parent.slug]: false }))
+  }, [activeSlug, sections, collapsed])
+
+  // Keep the active entry inside the list. Scroll only that list, not the page.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+
+    const reveal = () => {
+      const link = nav.querySelector(`[data-toc="${CSS.escape(activeSlug ?? '')}"]`)
+      if (!link) return
+
+      const navRect = nav.getBoundingClientRect()
+      const linkRect = link.getBoundingClientRect()
+      const padding = 8
+
+      if (linkRect.top < navRect.top + padding) {
+        nav.scrollTop -= navRect.top + padding - linkRect.top
+      } else if (linkRect.bottom > navRect.bottom - padding) {
+        nav.scrollTop += linkRect.bottom - (navRect.bottom - padding)
+      }
+    }
+
+    reveal()
+    const observer = new ResizeObserver(reveal)
+    observer.observe(nav)
+    return () => observer.disconnect()
+  }, [activeSlug, collapsed])
+
   const selectSection = (slug) => {
     setActiveSlug(slug)
     onNavigateSection?.(slug)
@@ -84,9 +120,9 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
   if (!sections.length) return null
 
   return (
-    <aside className="no-print hidden lg:block lg:sticky lg:top-24 lg:self-start">
-      <div className="article-toc p-4">
-        <div className="flex items-center justify-between gap-3 mb-4">
+    <aside className="no-print hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-7.5rem)] lg:flex-col lg:self-start">
+      <div className="article-toc flex min-h-0 flex-col p-4">
+        <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-white/50">On this page</p>
             <h2 className="mt-2 text-xl font-semibold text-white">Contents</h2>
@@ -96,7 +132,20 @@ const ArticleToc = ({ headings, postSlug, onNavigateSection, initialSection }) =
           </button>
         </div>
 
-        <nav className="space-y-3 text-sm text-white/75">
+        <nav ref={navRef} className="scrollbar-hide min-h-0 space-y-3 overflow-y-auto overscroll-contain text-sm text-white/75">
+          <a
+            href={`#blog/${postSlug}`}
+            data-toc=""
+            className={`toc-link block text-left ${activeSlug ? '' : 'active'}`}
+            aria-current={activeSlug ? undefined : 'location'}
+            onClick={(event) => {
+              if (!isPlainClick(event)) return
+              event.preventDefault()
+              selectSection(null)
+            }}
+          >
+            {title}
+          </a>
           {sections.map((section) => {
             const isExpanded = !collapsed[section.slug]
 

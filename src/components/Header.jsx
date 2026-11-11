@@ -119,14 +119,6 @@ const BlogsNavMenu = ({ label, active = false }) => {
                 <div className="text-xs text-white/60 mt-1">{formatDate(post.date)}</div>
               </a>
             ))}
-            <div className="border-t border-white/10 my-1" />
-            <a
-              href="#blogs"
-              onClick={(event) => { event.preventDefault(); navigateTo('#blogs') }}
-              className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm font-medium text-white/80"
-            >
-              All Blogs
-            </a>
           </div>
         </div>
       </div>

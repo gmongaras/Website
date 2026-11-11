@@ -120,6 +120,13 @@ html {
 
 .toc-link {
   position: relative;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-bottom: 3px;
   color: rgba(255,255,255,0.78);
   transition: color 250ms ease, transform 250ms ease;
 }
@@ -128,7 +135,7 @@ html {
   content: '';
   position: absolute;
   left: 0;
-  bottom: -2px;
+  bottom: 0;
   width: 0;
   height: 2px;
   background: var(--accent);
@@ -142,7 +149,6 @@ html {
 
 .toc-link.active {
   color: white;
-  font-weight: 600;
 }
 
 .toc-link.active::after {

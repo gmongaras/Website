@@ -152,6 +152,12 @@ const Article = ({ post, initialSection }) => {
   }, [post.slug, initialSection])
 
   const handleNavigateSection = useCallback((sectionId) => {
+    if (!sectionId) {
+      history.replaceState(null, '', `#blog/${post.slug}`)
+      window.scrollTo({ top: 0, behavior: 'auto' })
+      return
+    }
+
     history.replaceState(null, '', `#blog/${post.slug}/${sectionId}`)
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'auto' })
   }, [post.slug])
@@ -171,6 +177,7 @@ const Article = ({ post, initialSection }) => {
         <div className="section py-16 sm:py-24 pdf-page">
           <div className="max-w-7xl mx-auto grid grid-cols-1 gap-8 lg:grid-cols-[260px_minmax(0,1024px)] pdf-grid">
             <ArticleToc
+              title={post.title}
               headings={headings}
               postSlug={post.slug}
               onNavigateSection={handleNavigateSection}
