@@ -437,7 +437,7 @@ const GraphBackground = ({ containerRef }) => {
 
       for (let i = 0; i < signals.length; i += 1) {
         let signal = signals[i]
-        const progress = (time - signal.startedAt) / signal.duration
+        let progress = signal.duration > 0 ? (time - signal.startedAt) / signal.duration : 1
         if (progress >= 1) {
           const next = createSignal(time, false, signal.to, signal.from)
           if (!next) {
@@ -447,10 +447,14 @@ const GraphBackground = ({ containerRef }) => {
           }
           signal = next
           signals[i] = next
+          // The old progress belongs to the finished hop. Reusing it draws the
+          // new hop at its end for one frame, then back at the start.
+          progress = signal.duration > 0 ? (time - signal.startedAt) / signal.duration : 0
         }
 
-        const signalX = signal.from.x + (signal.to.x - signal.from.x) * Math.min(progress, 1)
-        const signalY = signal.from.y + (signal.to.y - signal.from.y) * Math.min(progress, 1)
+        progress = Math.min(Math.max(progress, 0), 1)
+        const signalX = signal.from.x + (signal.to.x - signal.from.x) * progress
+        const signalY = signal.from.y + (signal.to.y - signal.from.y) * progress
         ctx.drawImage(sprites.signal, signalX - half, signalY - half, SIGNAL_SPRITE_SIZE, SIGNAL_SPRITE_SIZE)
       }
     }
