@@ -55,7 +55,7 @@ html {
 /* A blurred sticky header has to be re-blurred on top of the animating canvas.
    Phones cannot keep up with that, in the mobile layout or a desktop-site layout. */
 @media (pointer: coarse) {
-  header.site-header {
+  .site-header {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background-color: rgba(0, 0, 0, 0.92);

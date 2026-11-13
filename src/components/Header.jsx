@@ -247,8 +247,27 @@ const Header = () => {
   }, [menuOpen])
 
   return (
-    <header className="site-header no-print sticky top-0 z-40 bg-black/70 backdrop-blur">
-      <div className="section py-4 flex items-center justify-between">
+    <header className="no-print sticky top-0 z-40">
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-0 h-12 translate-y-8 transition-opacity duration-300 ${scrolled ? 'opacity-100' : 'opacity-0'}`}
+        style={{
+          backdropFilter: 'blur(5px)',
+          WebkitBackdropFilter: 'blur(5px)',
+          WebkitMaskImage: 'linear-gradient(to bottom, #fff 0%, transparent 100%)',
+          maskImage: 'linear-gradient(to bottom, #fff 0%, transparent 100%)',
+        }}
+      />
+      <div className="relative z-10">
+        <div
+          aria-hidden
+          className="site-header pointer-events-none absolute inset-0 bg-black/70 backdrop-blur"
+          style={{
+            WebkitMaskImage: 'linear-gradient(to bottom, #fff 0, #fff calc(100% - 12px), transparent)',
+            maskImage: 'linear-gradient(to bottom, #fff 0, #fff calc(100% - 12px), transparent)',
+          }}
+        />
+        <div className="section relative py-4 flex items-center justify-between">
         <a
           href="/"
           onClick={(event) => { event.preventDefault(); navigateTo('/') }}
@@ -292,11 +311,20 @@ const Header = () => {
             </span>
           </button>
         </div>
+        </div>
       </div>
 
       <div
-        className="pointer-events-none absolute left-0 right-0 -bottom-4 h-8 transition-opacity duration-300"
-        style={{ opacity: scrolled ? 1 : 0, background: 'var(--gradient-header-fade)', filter: 'blur(12px)' }}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 z-20 -bottom-[52px] h-[104px] transition-opacity duration-300"
+        style={{
+          opacity: scrolled ? 1 : 0,
+          backgroundImage: 'var(--gradient-header-fade)',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          backgroundSize: '100% 2rem',
+          filter: 'blur(12px)',
+        }}
       />
 
       {createPortal(
