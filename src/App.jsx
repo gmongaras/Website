@@ -42,7 +42,7 @@ const PageFrame = ({ seo, children, fill = false, below = null }) => (
     {fill ? (
       <>
         <Header />
-        <main className="flex min-h-[calc(100vh-4.5rem)] flex-col md:min-h-[calc(100vh-6rem)]">{children}</main>
+        <main className="home-screen flex flex-col">{children}</main>
         {below}
         <Footer />
       </>

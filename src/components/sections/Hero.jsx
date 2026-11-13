@@ -59,7 +59,7 @@ const ProfilePhoto = () => (
   <div className="relative group mx-auto w-full max-w-[15rem] sm:max-w-[18rem] md:max-w-[20rem] lg:max-w-none">
     <div
       aria-hidden
-      className="absolute inset-0 rounded-2xl blur-2xl pointer-events-none"
+      className="pointer-events-none absolute inset-0 transform-gpu rounded-2xl blur-2xl"
       style={{ background: 'var(--gradient-pfp)' }}
     />
     <img

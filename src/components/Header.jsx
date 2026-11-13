@@ -247,7 +247,7 @@ const Header = () => {
   }, [menuOpen])
 
   return (
-    <header className="no-print sticky top-0 z-40 bg-black/70 backdrop-blur">
+    <header className="site-header no-print sticky top-0 z-40 bg-black/70 backdrop-blur">
       <div className="section py-4 flex items-center justify-between">
         <a
           href="/"

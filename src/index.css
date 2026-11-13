@@ -28,6 +28,40 @@ html {
   overflow-y: scroll;
 }
 
+/* Small viewport height stays put when the mobile browser bar shows and hides.
+   100vh changes with that bar and was resizing the hero canvas on every scroll. */
+.home-screen {
+  min-height: calc(100vh - 4.5rem);
+}
+
+@media (min-width: 768px) {
+  .home-screen {
+    min-height: calc(100vh - 6rem);
+  }
+}
+
+@supports (height: 100svh) {
+  .home-screen {
+    min-height: calc(100svh - 4.5rem);
+  }
+
+  @media (min-width: 768px) {
+    .home-screen {
+      min-height: calc(100svh - 6rem);
+    }
+  }
+}
+
+/* A blurred sticky header has to be re-blurred on top of the animating canvas.
+   Phones cannot keep up with that, in the mobile layout or a desktop-site layout. */
+@media (pointer: coarse) {
+  header.site-header {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: rgba(0, 0, 0, 0.92);
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
