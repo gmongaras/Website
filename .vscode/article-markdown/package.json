@@ -1,0 +1,15 @@
+{
+  "name": "article-markdown",
+  "displayName": "Article Markdown Preview",
+  "description": "Renders article citations, references, and side notes in the built-in Markdown preview.",
+  "publisher": "gmongaras",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.58.0"
+  },
+  "main": "./extension.js",
+  "contributes": {
+    "markdown.markdownItPlugins": true,
+    "markdown.previewStyles": ["./preview.css"]
+  }
+}

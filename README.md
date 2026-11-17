@@ -43,6 +43,7 @@ src/
     blog/                 Article view, table of contents, markdown renderers
     ui/                   Cards, buttons, lazy images, and the media scroller
   lib/                    Markdown, hash parsing and date helpers
+  katexMacros.js          Math commands shared by every article, such as \bigo
   pdf/                    Vector PDF exporter for articles
   GraphBackground.jsx     Animated node graph behind the hero
 scripts/                  Content generators (see below)
@@ -106,7 +107,43 @@ The next production build regenerates the sitemap from `src/blogs/index.js`.
 
 Standard Markdown, plus:
 
-- **Maths** — `$inline$` and `$$display$$`, rendered by KaTeX.
+- **Maths** — `$inline$` and `$$display$$`, rendered by KaTeX. Shared commands
+  live in `src/katexMacros.js`. `\bigo` is `\mathcal{O}`. A new command there
+  also has to be copied into `markdown.math.macros` in `.vscode/settings.json`,
+  which is what the editor preview reads.
+- **Citations** — `\cite{vaswani2017}` renders as a clickable `[1]`.
+  `\cite{vaswani2017, bahdanau2014}` renders as `[1], [2]`. Numbers follow the
+  order of first use. The entries sit in a `bib` fence; the site prints them
+  at the bottom as References. A line starting with `%` is a comment, and an
+  indented line continues the entry above it.
+
+  ````markdown
+  ```bib
+  @vaswani2017 Vaswani et al. Attention Is All You Need. 2017. https://arxiv.org/abs/1706.03762
+  ```
+  ````
+
+- **Equations** — a `$$` block is numbered only when it contains `\label`.
+  `\eqref{eq:cost}` (and `\ref{eq:cost}`) renders as `[1]` and scrolls to it.
+
+  ```markdown
+  $$
+  \label{eq:cost}
+  T(n) = \bigo(n)
+  $$
+  ```
+
+- **Sections** — `\ref{plain-heading}` links to that heading and uses the
+  heading text as the link. The id is the usual slug. Append `{#claim}` to pin
+  a shorter one: `## A numbered claim {#claim}`, then `\ref{claim}`.
+- **Side notes** — collapsed until opened:
+
+  ```markdown
+  :::note Where this comes from
+  Optional paragraphs, math, and citations.
+  :::
+  ```
+
 - **Figures** — `![alt](/blogs/images/foo/1.webp "caption")`. The caption
   supports links, `*emphasis*`, `` `code` `` and maths.
 - **YouTube** — a fenced block with the `youtube` language and a URL or bare
@@ -116,6 +153,23 @@ Standard Markdown, plus:
 
 Level-2 and level-3 headings automatically become the table of contents, and
 each gets an anchor so `/#blog/<slug>/<heading-id>` links to a section.
+
+### Markdown preview
+
+Ctrl+Shift+V uses VS Code's own renderer. `\bigo` comes from
+`.vscode/settings.json`. Citations, references, and side notes come from the
+local extension in `.vscode/article-markdown`. VS Code and Cursor keep
+separate extension lists, so install the package in whichever editor you are
+using:
+
+```powershell
+code --install-extension .vscode\article-markdown\article-markdown.vsix
+```
+
+In Cursor, the same file is installed with `cursor --install-extension` and
+that path. From the Extensions view, the `...` menu → **Install from VSIX...**
+selects the same file. Reload the window after installing, then open the
+preview again.
 
 ## PDF export
 

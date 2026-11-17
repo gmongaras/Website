@@ -204,6 +204,93 @@ html {
   overflow-y: hidden;
 }
 
+.article-ref {
+  color: rgb(var(--accent-rgb));
+}
+
+.article-ref:hover {
+  text-decoration: underline;
+}
+
+.equation {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.75rem 0;
+}
+
+.equation-body {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.equation-body .katex-display {
+  margin: 0;
+}
+
+.equation-number {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.article-note {
+  margin: 1.5rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.article-note > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.article-note > summary::-webkit-details-marker {
+  display: none;
+}
+
+.article-note > summary::marker {
+  content: '';
+}
+
+.article-note-chevron {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  transition: transform 150ms ease;
+}
+
+.article-note[open] > summary .article-note-chevron {
+  transform: rotate(90deg);
+}
+
+.article-note-body {
+  padding: 0 1rem 0.25rem 2.5rem;
+}
+
+.article-references {
+  margin: 0 0 1.5rem;
+  padding-left: 1.5rem;
+  list-style: decimal;
+}
+
+.article-references li {
+  margin: 0.75rem 0;
+  padding-left: 0.35rem;
+}
+
+.article-markdown-compact p {
+  margin-bottom: 0;
+}
+
 .katex {
   font-size: 1rem;
 }

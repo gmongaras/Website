@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Download } from 'lucide-react'
 import { nextPaint } from '../../lib/dom'
+import { prepareArticleMarkdown } from '../../lib/articleSyntax'
 import { extractHeadings } from '../../lib/markdown'
-import Header from '../Header'
 import SEO from '../SEO'
 import { PrintModeContext } from '../PrintModeContext'
 import ArticleToc from './ArticleToc'
@@ -42,7 +42,7 @@ const formatPostDate = (date) => new Date(date).toLocaleDateString('en-US', {
 })
 
 const BlogPostNotFound = () => (
-  <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-[70vh] items-center justify-center">
     <SEO
       title="Blog Post Not Found"
       description="The requested blog post could not be found."
@@ -136,18 +136,33 @@ const useBrowserPrintMode = () => {
  * A single article: sticky table of contents, the rendered markdown, and a
  * button that exports the very same markup as a vector PDF.
  */
+const revealTarget = (id) => {
+  const target = document.getElementById(id)
+  if (!target) return
+  let parent = target.parentElement
+  while (parent) {
+    if (parent instanceof HTMLDetailsElement) parent.open = true
+    parent = parent.parentElement
+  }
+  target.scrollIntoView({ behavior: 'auto' })
+}
+
 const Article = ({ post, initialSection }) => {
   const articleRef = useRef(null)
   const isPrinting = useBrowserPrintMode()
   const compilingPdf = useCompilePdf(articleRef, post)
 
-  const headings = useMemo(() => extractHeadings(post.body), [post.body])
+  const articleMarkdown = useMemo(
+    () => prepareArticleMarkdown(post.body, post.slug),
+    [post.body, post.slug],
+  )
+  const headings = useMemo(() => extractHeadings(articleMarkdown), [articleMarkdown])
   const structuredData = useMemo(() => buildStructuredData(post), [post])
   const subtitle = post.subtitle || post.excerpt || ''
 
   // A new article opens at the top, unless the link pointed at a section.
   useEffect(() => {
-    if (initialSection) document.getElementById(initialSection)?.scrollIntoView({ behavior: 'auto' })
+    if (initialSection) revealTarget(initialSection)
     else window.scrollTo({ top: 0, behavior: 'auto' })
   }, [post.slug, initialSection])
 
@@ -159,12 +174,12 @@ const Article = ({ post, initialSection }) => {
     }
 
     history.replaceState(null, '', `#blog/${post.slug}/${sectionId}`)
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'auto' })
+    revealTarget(sectionId)
   }, [post.slug])
 
   return (
     <PrintModeContext.Provider value={isPrinting || compilingPdf}>
-      <div className="min-h-screen">
+      <div>
         <SEO
           title={post.title}
           description={post.excerpt}
@@ -173,7 +188,6 @@ const Article = ({ post, initialSection }) => {
           type="article"
           structuredData={structuredData}
         />
-        <Header />
         <div className="section py-16 sm:py-24 pdf-page">
           <div className="max-w-7xl mx-auto grid grid-cols-1 gap-8 lg:grid-cols-[260px_minmax(0,1024px)] pdf-grid">
             <ArticleToc
@@ -219,7 +233,7 @@ const Article = ({ post, initialSection }) => {
                 </header>
 
                 <div className="prose prose-invert max-w-none">
-                  <MarkdownContent content={post.body} />
+                  <MarkdownContent content={articleMarkdown} />
                 </div>
               </article>
             </div>

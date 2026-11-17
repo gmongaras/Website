@@ -36,116 +36,91 @@ const readRoute = () => {
   return { page: 'home', post: null, section: null }
 }
 
-const PageFrame = ({ seo, children, fill = false, below = null }) => (
-  <div className={fill ? undefined : 'min-h-screen flex flex-col'}>
-    {seo}
-    {fill ? (
-      <>
-        <Header />
-        <main className="home-screen flex flex-col">{children}</main>
-        {below}
-        <Footer />
-      </>
-    ) : (
-      <>
-        <Header />
-        <div className="flex-1 relative">
-          <main>{children}</main>
-          <Footer />
-        </div>
-      </>
-    )}
-  </div>
+// Header stays outside this component so a route change does not remount it.
+// Remounting recreated the logo image and the blurred bar on every click.
+const PageBody = ({ seo, children, fill = false, below = null, footer = true }) => (
+  fill ? (
+    <>
+      {seo}
+      <main className="home-screen flex flex-col">{children}</main>
+      {below}
+      {footer ? <Footer /> : null}
+    </>
+  ) : (
+    <div className="flex-1 relative">
+      {seo}
+      <main>{children}</main>
+      {footer ? <Footer /> : null}
+    </div>
+  )
 )
 
-const HomePage = () => (
-  <PageFrame
-    seo={(
-      <SEO
-        title="Gabriel Mongaras — AI Engineer & Researcher"
-        description="AI Engineer & Researcher focused on diffusion models, attention mechanisms, and efficient AI systems. Experience at Etched, Google, Amazon, and Meta."
-        keywords={['AI Engineer', 'Machine Learning', 'Diffusion Models', 'Neural Networks', 'Research', 'PyTorch', 'Transformers']}
-        url="/"
-      />
-    )}
-    fill
-    below={<Contact />}
-  >
-    <Hero />
-  </PageFrame>
+const homeSeo = (
+  <SEO
+    title="Gabriel Mongaras — AI Engineer & Researcher"
+    description="AI Engineer & Researcher focused on diffusion models, attention mechanisms, and efficient AI systems. Experience at Etched, Google, Amazon, and Meta."
+    keywords={['AI Engineer', 'Machine Learning', 'Diffusion Models', 'Neural Networks', 'Research', 'PyTorch', 'Transformers']}
+    url="/"
+  />
 )
 
-const BlogsPage = () => (
-  <PageFrame
-    seo={(
-      <SEO
-        title="Blogs"
-        description="Notes on models, attention, and the details in between."
-        url="/#blogs"
-      />
-    )}
-  >
-    <Blogs />
-  </PageFrame>
+const blogsSeo = (
+  <SEO
+    title="Blogs"
+    description="Notes on models, attention, and the details in between."
+    url="/#blogs"
+  />
 )
 
-const ResearchPage = () => (
-  <PageFrame
-    seo={(
-      <SEO
-        title="Research"
-        description="Papers on attention, and the thesis behind them."
-        url="/#research"
-      />
-    )}
-  >
-    <Publications />
-  </PageFrame>
+const researchSeo = (
+  <SEO
+    title="Research"
+    description="Papers on attention, and the thesis behind them."
+    url="/#research"
+  />
 )
 
-const ProjectsPage = () => (
-  <PageFrame
-    seo={(
-      <SEO
-        title="Projects"
-        description="Code from papers, kernels, and experiments."
-        url="/#projects"
-      />
-    )}
-  >
-    <Suspense fallback={<div className="section py-16" />}>
-      <Projects />
-    </Suspense>
-  </PageFrame>
+const projectsSeo = (
+  <SEO
+    title="Projects"
+    description="Code from papers, kernels, and experiments."
+    url="/#projects"
+  />
 )
 
 const BlogRoute = ({ metadata, initialSection }) => {
-  const [post, setPost] = useState(metadata ? undefined : null)
+  const [post, setPost] = useState(null)
+  const [ready, setReady] = useState(!metadata)
 
   useEffect(() => {
     let isCurrent = true
 
     if (!metadata) {
       setPost(null)
+      setReady(true)
       return () => { isCurrent = false }
     }
 
-    setPost(undefined)
+    setReady(false)
     Promise.all([loadPost(metadata.slug), loadBlogPostComponent()])
       .then(([loadedPost]) => {
-        if (isCurrent) setPost(loadedPost)
+        if (!isCurrent) return
+        setPost(loadedPost)
+        setReady(true)
       })
       .catch(() => {
-        if (isCurrent) setPost(null)
+        if (!isCurrent) return
+        setPost(null)
+        setReady(true)
       })
 
     return () => { isCurrent = false }
   }, [metadata])
 
-  if (post === undefined) return <div className="min-h-screen" />
+  if (!ready) return <div className="min-h-[40vh]" />
 
   return (
-    <Suspense fallback={<div className="min-h-screen" />}>
+    <Suspense fallback={<div className="min-h-[40vh]" />}>
       <BlogPost post={post} initialSection={initialSection} />
     </Suspense>
   )
@@ -205,10 +180,30 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [route.page])
 
-  if (route.page === 'blogs') return <BlogsPage />
-  if (route.page === 'research') return <ResearchPage />
-  if (route.page === 'projects') return <ProjectsPage />
-  if (route.page === 'blog') return <BlogRoute metadata={route.post} initialSection={route.section} />
+  const home = route.page === 'home'
 
-  return <HomePage />
+  return (
+    <div className={home ? undefined : 'min-h-screen flex flex-col'}>
+      <Header />
+      {route.page === 'blogs' && <PageBody seo={blogsSeo}><Blogs /></PageBody>}
+      {route.page === 'research' && <PageBody seo={researchSeo}><Publications /></PageBody>}
+      {route.page === 'projects' && (
+        <PageBody seo={projectsSeo}>
+          <Suspense fallback={<div className="section py-16" />}>
+            <Projects />
+          </Suspense>
+        </PageBody>
+      )}
+      {route.page === 'blog' && (
+        <PageBody seo={null} footer={false}>
+          <BlogRoute metadata={route.post} initialSection={route.section} />
+        </PageBody>
+      )}
+      {home && (
+        <PageBody fill seo={homeSeo} below={<Contact />}>
+          <Hero />
+        </PageBody>
+      )}
+    </div>
+  )
 }

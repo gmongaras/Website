@@ -5,6 +5,7 @@
 // the small subset of syntax the articles actually use is expanded here.
 
 import katex from 'katex'
+import { katexMacros } from '../katexMacros'
 
 const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/g
 const STRONG = /\*\*(.*?)\*\*/g
@@ -22,7 +23,7 @@ const escapeHtml = (text) => text
 
 const renderMath = (latex, displayMode) => {
   try {
-    return katex.renderToString(latex, { displayMode })
+    return katex.renderToString(latex, { displayMode, macros: { ...katexMacros } })
   } catch {
     return null
   }
@@ -65,13 +66,24 @@ export const createHeadingId = (text) => text
   .replace(/[^\w\s-]/g, '')
   .replace(/\s+/g, '-')
 
+// A trailing `{#id}` on a heading pins the anchor. Without one, the id is
+// derived from the heading text, which is what every existing article uses.
+const EXPLICIT_HEADING_ID = /^(.*?)\s*\{#([A-Za-z0-9_-]+)\}\s*$/
+
+export const splitHeadingLabel = (raw) => {
+  const trimmed = raw.trim()
+  const match = trimmed.match(EXPLICIT_HEADING_ID)
+  if (!match) return { text: trimmed, slug: createHeadingId(trimmed), explicit: false }
+  return { text: match[1].trim(), slug: match[2], explicit: true }
+}
+
 export const extractHeadings = (content) => content
   .split(/\r?\n/)
   .map((line) => line.match(/^(#{2,3})\s+(.+)$/))
   .filter(Boolean)
   .map(([, hashes, rawText]) => {
-    const text = rawText.trim()
-    return { level: hashes.length, text, slug: createHeadingId(text) }
+    const label = splitHeadingLabel(rawText)
+    return { level: hashes.length, text: label.text, slug: label.slug }
   })
 
 // Level-2 headings become sections; level-3 headings nest under the section

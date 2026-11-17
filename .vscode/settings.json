@@ -1,0 +1,8 @@
+{
+  // Ctrl+Shift+V uses this KaTeX table. The site uses src/katexMacros.js.
+  // Keep the two copies the same. Citations, references, and side notes are
+  // rendered by the Article Markdown Preview extension in .vscode/article-markdown.
+  "markdown.math.macros": {
+    "\\bigo": "\\mathcal{O}"
+  }
+}

@@ -1,10 +1,14 @@
-import { Children, isValidElement, memo } from 'react'
+import { Children, isValidElement, memo, useContext } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import katex from 'katex'
+import { ChevronRight } from 'lucide-react'
 import 'katex/dist/katex.min.css'
-import { createHeadingId, getYoutubeVideoId, normalizeLegacyMarkdown } from '../../lib/markdown'
+import { katexMacros } from '../../katexMacros'
+import { getYoutubeVideoId, normalizeLegacyMarkdown, splitHeadingLabel } from '../../lib/markdown'
+import { PrintModeContext } from '../PrintModeContext'
 import CodeBlock from './CodeBlock'
 import Figure from './Figure'
 import YouTubeEmbed from './YouTubeEmbed'
@@ -27,18 +31,71 @@ const MarkdownParagraph = ({ children }) => (
     : <p className="mb-4 text-white/90 leading-relaxed">{children}</p>
 )
 
+const stripExplicitId = (children) => {
+  const list = Children.toArray(children)
+  for (let index = list.length - 1; index >= 0; index -= 1) {
+    if (typeof list[index] !== 'string') continue
+    list[index] = list[index].replace(/\s*\{#[A-Za-z0-9_-]+\}\s*$/, '')
+    if (!list[index]) list.splice(index, 1)
+    break
+  }
+  return list
+}
+
 const MarkdownHeading = ({ level, children }) => {
   const text = Children.toArray(children)
     .map((child) => (typeof child === 'string' ? child : ''))
     .join('')
+  const label = splitHeadingLabel(text)
   const Tag = `h${level}`
 
   return (
-    <Tag id={createHeadingId(text)} className={`${HEADING_CLASSES[level]} scroll-mt-24`}>
-      {children}
+    <Tag id={label.slug} className={`${HEADING_CLASSES[level]} scroll-mt-24`}>
+      {label.explicit ? stripExplicitId(children) : children}
     </Tag>
   )
 }
+
+const Equation = ({ id, n, href, latex }) => {
+  const html = katex.renderToString(latex || '', {
+    displayMode: true,
+    macros: { ...katexMacros },
+    throwOnError: false,
+  })
+
+  return (
+    <div id={id} className="equation pdf-block scroll-mt-24">
+      <div className="equation-body" dangerouslySetInnerHTML={{ __html: html }} />
+      <a href={href} className="equation-number article-ref">[{n}]</a>
+    </div>
+  )
+}
+
+const SideNote = ({ title, body }) => {
+  const printing = useContext(PrintModeContext)
+
+  return (
+    <details className="article-note" open={printing ? true : undefined}>
+      <summary>
+        <ChevronRight className="article-note-chevron" aria-hidden />
+        <span>{title || 'Side note'}</span>
+      </summary>
+      <div className="article-note-body">
+        <MarkdownContent content={body} />
+      </div>
+    </details>
+  )
+}
+
+const Bibliography = ({ entries }) => (
+  <ol className="article-references">
+    {entries.map((entry) => (
+      <li key={entry.id} id={entry.id} value={entry.n} className="scroll-mt-24">
+        <MarkdownContent content={entry.text} compact />
+      </li>
+    ))}
+  </ol>
+)
 
 // react-markdown routes both inline code and fenced blocks here. Fenced blocks
 // carry a language class; the "youtube" language is treated as an embed.
@@ -51,6 +108,17 @@ const MarkdownCode = ({ className, children, inline }) => {
 
   const language = className?.replace('language-', '') || 'text'
   const code = rawCode.replace(/\n$/, '')
+
+  if (language === 'equation' || language === 'sidenote' || language === 'bibliography') {
+    try {
+      const data = JSON.parse(code)
+      if (language === 'equation') return <Equation {...data} />
+      if (language === 'sidenote') return <SideNote title={data.title} body={data.body} />
+      return <Bibliography entries={data.entries || []} />
+    } catch {
+      // A broken payload is still shown, as a code block, so the source is visible.
+    }
+  }
 
   if (language === 'youtube') {
     const videoId = getYoutubeVideoId(code)
@@ -80,16 +148,23 @@ const COMPONENTS = {
   // CodeBlock and YouTubeEmbed bring their own container, so <pre> is dropped.
   pre: ({ children }) => <>{children}</>,
   code: MarkdownCode,
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      className={typeof href === 'string' && href.startsWith('#blog/') ? 'article-ref' : undefined}
+    >
+      {children}
+    </a>
+  ),
 }
 
 const REMARK_PLUGINS = [remarkGfm, remarkMath]
-const REHYPE_PLUGINS = [rehypeKatex]
 
-const MarkdownContent = memo(({ content }) => (
-  <div className="blog-markdown text-white/90">
+const MarkdownContent = memo(({ content, compact = false }) => (
+  <div className={compact ? 'article-markdown-compact text-white/90' : 'blog-markdown text-white/90'}>
     <ReactMarkdown
       remarkPlugins={REMARK_PLUGINS}
-      rehypePlugins={REHYPE_PLUGINS}
+      rehypePlugins={[[rehypeKatex, { macros: { ...katexMacros } }]]}
       components={COMPONENTS}
     >
       {normalizeLegacyMarkdown(content)}
