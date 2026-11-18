@@ -148,14 +148,19 @@ const COMPONENTS = {
   // CodeBlock and YouTubeEmbed bring their own container, so <pre> is dropped.
   pre: ({ children }) => <>{children}</>,
   code: MarkdownCode,
-  a: ({ href, children }) => (
-    <a
-      href={href}
-      className={typeof href === 'string' && href.startsWith('#blog/') ? 'article-ref' : undefined}
-    >
-      {children}
-    </a>
-  ),
+  a: ({ href, children }) => {
+    const internal = typeof href === 'string' && (href.startsWith('#') || href.startsWith('/'))
+    return (
+      <a
+        href={href}
+        className={typeof href === 'string' && href.startsWith('#blog/') ? 'article-ref' : undefined}
+        target={internal ? undefined : '_blank'}
+        rel={internal ? undefined : 'noreferrer'}
+      >
+        {children}
+      </a>
+    )
+  },
 }
 
 const REMARK_PLUGINS = [remarkGfm, remarkMath]
