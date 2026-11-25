@@ -57,6 +57,7 @@ scripts/                  Content generators (see below)
 | `#blogs` | Blog index |
 | `#research` | Papers. `#publications` opens the same page. |
 | `#projects` | Projects |
+| `#reading` | Books and papers currently being read |
 | `#blog/<slug>` | An article. `#blog/<slug>/<heading-id>` opens one section of it. |
 
 Resume links to `/Resume.pdf` and opens in a new tab. It is not a route.
@@ -73,6 +74,7 @@ source, with their data, and are not mounted on a page.
 | Education, skills, experience | `src/data.js` (kept; not on a page right now) |
 | YouTube videos | `src/youtubeData.js` (kept; Media is not mounted) |
 | Projects | `src/projects.js` |
+| Reading list | `src/reading.js` |
 | Blog posts | `src/blogs/` |
 
 ### Adding a blog post

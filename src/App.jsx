@@ -7,6 +7,7 @@ import SEO from './components/SEO'
 import Hero from './components/sections/Hero'
 import Publications from './components/sections/Publications'
 import Blogs from './components/sections/Blogs'
+import Reading from './components/sections/Reading'
 import Contact from './components/sections/Contact'
 import Footer from './components/sections/Footer'
 
@@ -33,6 +34,7 @@ const readRoute = () => {
   if (hash === '#blogs') return { page: 'blogs', post: null, section: null }
   if (hash === '#research' || hash === '#publications') return { page: 'research', post: null, section: null }
   if (hash === '#projects') return { page: 'projects', post: null, section: null }
+  if (hash === '#reading') return { page: 'reading', post: null, section: null }
   return { page: 'home', post: null, section: null }
 }
 
@@ -85,6 +87,14 @@ const projectsSeo = (
     title="Projects"
     description="Code from papers, kernels, and experiments."
     url="/#projects"
+  />
+)
+
+const readingSeo = (
+  <SEO
+    title="Reading"
+    description="Books and papers I am reading."
+    url="/#reading"
   />
 )
 
@@ -194,6 +204,7 @@ export default function App() {
           </Suspense>
         </PageBody>
       )}
+      {route.page === 'reading' && <PageBody seo={readingSeo}><Reading /></PageBody>}
       {route.page === 'blog' && (
         <PageBody seo={null} footer={false}>
           <BlogRoute metadata={route.post} initialSection={route.section} />

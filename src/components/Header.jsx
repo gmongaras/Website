@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowUpRight, BookAudio, BookOpen, ChevronDown, Cpu, FileText, House, Menu, X } from 'lucide-react'
+import { ArrowUpRight, BookAudio, BookOpen, BookOpenText, ChevronDown, Cpu, FileText, House, Menu, X } from 'lucide-react'
 import { loadPost, posts } from '../blogs'
 import { nextPaint } from '../lib/dom'
 import { formatDate } from '../lib/formatDate'
@@ -10,14 +10,16 @@ const NAV_ITEMS = [
   { href: '#blogs', label: 'Blogs', icon: BookAudio },
   { href: '#research', label: 'Research', icon: BookOpen },
   { href: '#projects', label: 'Projects', icon: Cpu },
+  { href: '#reading', label: 'Reading', icon: BookOpenText },
 ]
 
-const PAGE_HASHES = new Set(['#blogs', '#research', '#projects', '#publications', '#contact'])
+const PAGE_HASHES = new Set(['#blogs', '#research', '#projects', '#reading', '#publications', '#contact'])
 
 const pageForHash = (hash) => {
   if (hash === '#blogs' || hash.startsWith('#blog/')) return '#blogs'
   if (hash === '#research' || hash === '#publications') return '#research'
   if (hash === '#projects') return '#projects'
+  if (hash === '#reading') return '#reading'
   return '/'
 }
 
