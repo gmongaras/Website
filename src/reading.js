@@ -1,29 +1,29 @@
 export const books = [
-	{
+    {
+        title: 'The Theoretical Minimum: What You Need to Know to Start Doing Physics',
+        author: 'Leonard Susskind and George Hrabovsky',
+    },
+    {
+        title: 'Reinforcement Learning: An Introduction (2nd ed.)',
+        author: 'Richard S. Sutton and Andrew G. Barto',
+        links: [
+            { label: 'PDF', href: '/reading/books/reinforcement_learning.pdf' },
+        ],
+    },
+    {
+        title: 'Numerical Linear Algebra',
+        author: 'Lloyd N. Trefethen and David Bau III',
+        links: [
+            { label: 'PDF', href: '/reading/books/numerical_linear_algebra.pdf' },
+        ],
+    },
+    {
 		title: 'Elementary Applied Topology',
 		author: 'Robert Ghrist',
 		note: "A brutal introduction to topology. I got part way through with some friends during my Bachelor's",
 		links: [
 			{ label: 'PDF', href: '/reading/books/topology_ghrist.pdf' },
 		],
-	},
-	{
-		title: 'Numerical Linear Algebra',
-		author: 'Lloyd N. Trefethen and David Bau III',
-		links: [
-			{ label: 'PDF', href: '/reading/books/numerical_linear_algebra.pdf' },
-		],
-	},
-	{
-		title: 'Reinforcement Learning: An Introduction (2nd ed.)',
-		author: 'Richard S. Sutton and Andrew G. Barto',
-		links: [
-			{ label: 'PDF', href: '/reading/books/reinforcement_learning.pdf' },
-		],
-	},
-	{
-		title: 'The Theoretical Minimum: What You Need to Know to Start Doing Physics',
-		author: 'Leonard Susskind and George Hrabovsky',
 	},
 ]
 
