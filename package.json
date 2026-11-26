@@ -12,6 +12,7 @@
     "optimize-media": "node scripts/optimizeMedia.js",
     "generate-image-dimensions": "node scripts/generateImageDimensions.js",
     "generate-article-pdfs": "node scripts/generateArticlePdfs.js",
+    "add-paper": "node scripts/add_paper.js",
     "generate-sitemap": "node scripts/generateSitemap.js",
     "generate-og-image": "python scripts/generateOGImage.py"
   },
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
+    "fast-xml-parser": "^5.12.1",
     "playwright": "^1.63.0",
     "postcss": "^8.4.45",
     "sharp": "^0.35.4",

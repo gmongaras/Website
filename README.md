@@ -77,6 +77,20 @@ source, with their data, and are not mounted on a page.
 | Reading list | `src/reading.js` |
 | Blog posts | `src/blogs/` |
 
+### Adding an arXiv paper
+
+Pass the paper's arXiv abstract URL to the helper. It downloads the PDF into
+`public/reading/papers/` using a lowercase, underscore-separated filename and
+adds the title, authors, abstract link, and local PDF link to the top of
+`papers` in `src/reading.js`.
+
+```powershell
+python scripts/add_paper.py https://arxiv.org/abs/2506.02070
+# Direct Node/npm alternatives:
+node scripts/add_paper.js https://arxiv.org/abs/2506.02070
+npm run add-paper -- https://arxiv.org/abs/2506.02070
+```
+
 ### Adding a blog post
 
 1. Write the article as `src/blogs/<name>.md`.

@@ -29,6 +29,17 @@ export const books = [
 
 export const papers = [
     {
+        "title": "Physics of Language Models: Part 4.2, Canon Layers at Scale where Synthetic Pretraining Resonates in Reality",
+        "author": "Zeyuan Allen-Zhu",
+        "href": "https://arxiv.org/abs/2611.24963",
+        "links": [
+            {
+                "label": "PDF",
+				"href": "/reading/papers/physics_of_language_models_part_4_2.pdf"
+            }
+        ]
+    },
+    {
         title: 'An Introduction to Flow Matching and Diffusion Models',
         author: 'Peter Holderrieth and Ezra Erives',
         note: 'A really good intro into the math of diffusion models.',
