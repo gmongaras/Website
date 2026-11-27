@@ -23,6 +23,10 @@ const pageForHash = (hash) => {
   return '/'
 }
 
+const pageForLocation = () => (
+  window.location.pathname.startsWith('/blog/') ? '#blogs' : pageForHash(window.location.hash)
+)
+
 const ACTIVE_RING = { boxShadow: 'inset 0 0 0 1px rgba(var(--accent-rgb), 0.9)' }
 
 const NAV_LINK_CLASS = (active) =>
@@ -35,6 +39,11 @@ const NAV_LINK_CLASS = (active) =>
 // Follows an in-page or blog link without letting the browser jump the page.
 const navigateTo = (href) => {
   if (href === '/') {
+    if (window.location.pathname !== '/') {
+      window.location.assign('/')
+      return
+    }
+
     if (window.location.hash) {
       history.pushState(null, '', window.location.pathname + window.location.search)
       window.dispatchEvent(new HashChangeEvent('hashchange'))
@@ -44,7 +53,17 @@ const navigateTo = (href) => {
     return
   }
 
+  if (href.startsWith('/blog/')) {
+    window.location.assign(href)
+    return
+  }
+
   if (!href.startsWith('#')) return
+
+  if (PAGE_HASHES.has(href) && window.location.pathname !== '/') {
+    window.location.assign(`/${href}`)
+    return
+  }
 
   if (window.location.hash === href) {
     if (href === '#contact') document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
@@ -111,8 +130,8 @@ const BlogsNavMenu = ({ label, active = false }) => {
             {posts.slice(0, 3).map((post) => (
               <a
                 key={post.slug}
-                href={`#blog/${post.slug}`}
-                onClick={(event) => { event.preventDefault(); navigateTo(`#blog/${post.slug}`) }}
+                href={`/blog/${post.slug}/`}
+                onClick={(event) => { event.preventDefault(); navigateTo(`/blog/${post.slug}/`) }}
                 onPointerEnter={() => { loadPost(post.slug).catch(() => {}) }}
                 onFocus={() => { loadPost(post.slug).catch(() => {}) }}
                 className="block px-3 py-2 rounded-md hover:bg-white/5 transition-colors text-sm"
@@ -206,10 +225,10 @@ const MobileNavSheet = ({ onClose, currentHref }) => (
 const Header = () => {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [currentHref, setCurrentHref] = useState(() => pageForHash(window.location.hash))
+  const [currentHref, setCurrentHref] = useState(pageForLocation)
 
   useEffect(() => {
-    const sync = () => setCurrentHref(pageForHash(window.location.hash))
+    const sync = () => setCurrentHref(pageForLocation())
     window.addEventListener('hashchange', sync)
     window.addEventListener('popstate', sync)
     return () => {

@@ -32,7 +32,7 @@ function generateSitemap() {
   // Add blog posts
   posts.forEach(post => {
     urls.push({
-      loc: `${SITE_URL}/#blog/${post.slug}`,
+      loc: `${SITE_URL}/blog/${post.slug}/`,
       lastmod: post.date,
       changefreq: 'monthly',
       priority: '0.8'

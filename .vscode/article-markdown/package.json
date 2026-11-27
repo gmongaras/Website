@@ -3,7 +3,7 @@
   "displayName": "Article Markdown Preview",
   "description": "Renders article citations, references, and side notes in the built-in Markdown preview.",
   "publisher": "gmongaras",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.58.0"
   },

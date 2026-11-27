@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "node scripts/generateStaticBlogPages.js",
     "predev": "npm run optimize-media && npm run generate-image-dimensions && npm run generate-article-pdfs",
     "prebuild": "npm run optimize-media && npm run generate-image-dimensions && npm run generate-article-pdfs && npm run generate-sitemap",
     "preview": "vite preview",

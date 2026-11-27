@@ -8,7 +8,7 @@ const prefetch = (slug) => {
 
 const PostLink = ({ post }) => (
   <a
-    href={`#blog/${post.slug}`}
+    href={`/blog/${post.slug}/`}
     onPointerEnter={() => prefetch(post.slug)}
     onFocus={() => prefetch(post.slug)}
     className="group grid grid-cols-1 gap-2 rounded-2xl px-3 py-5 transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:items-start sm:gap-x-6 sm:px-4 sm:py-7"

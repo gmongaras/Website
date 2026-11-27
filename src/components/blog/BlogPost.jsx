@@ -28,8 +28,8 @@ const buildStructuredData = (post) => ({
   publisher: { '@type': 'Person', name: 'Gabriel Mongaras' },
   datePublished: post.date,
   dateModified: post.date,
-  url: `${SITE_URL}/#blog/${post.slug}`,
-  mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/#blog/${post.slug}` },
+  url: `${SITE_URL}/blog/${post.slug}/`,
+  mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/blog/${post.slug}/` },
   keywords: post.tags.join(', '),
   articleSection: 'Technology',
   wordCount: post.body.split(' ').length,
@@ -46,7 +46,7 @@ const BlogPostNotFound = () => (
     <SEO
       title="Blog Post Not Found"
       description="The requested blog post could not be found."
-      url="/#blog/not-found"
+      url="/blog/not-found/"
     />
     <div className="text-center">
       <h1 className="text-2xl font-semibold mb-4">Blog Post Not Found</h1>
@@ -167,13 +167,14 @@ const Article = ({ post, initialSection }) => {
   }, [post.slug, initialSection])
 
   const handleNavigateSection = useCallback((sectionId) => {
+    const articleUrl = `/blog/${post.slug}/`
     if (!sectionId) {
-      history.replaceState(null, '', `#blog/${post.slug}`)
+      history.replaceState(null, '', articleUrl)
       window.scrollTo({ top: 0, behavior: 'auto' })
       return
     }
 
-    history.replaceState(null, '', `#blog/${post.slug}/${sectionId}`)
+    history.replaceState(null, '', `${articleUrl}#${sectionId}`)
     revealTarget(sectionId)
   }, [post.slug])
 
@@ -184,7 +185,7 @@ const Article = ({ post, initialSection }) => {
           title={post.title}
           description={post.excerpt}
           keywords={post.tags}
-          url={`/#blog/${post.slug}`}
+          url={`/blog/${post.slug}/`}
           type="article"
           structuredData={structuredData}
         />

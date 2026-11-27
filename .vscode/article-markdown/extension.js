@@ -24,6 +24,7 @@ const sidenote = (md) => {
     open.block = true
     open.info = (match[2] || '').trim() || 'Side note'
     open.map = [startLine, next]
+    open.attrJoin('class', 'article-note')
 
     const parent = state.parentType
     const lineMax = state.lineMax
@@ -33,14 +34,18 @@ const sidenote = (md) => {
     state.parentType = parent
     state.lineMax = lineMax
 
-    state.push('sidenote_close', 'details', -1).block = true
+    const close = state.push('sidenote_close', 'details', -1)
+    close.block = true
+    const closeLine = next < endLine ? next : Math.max(startLine, endLine - 1)
+    close.map = [closeLine, Math.min(closeLine + 1, endLine)]
     state.line = Math.min(next + 1, endLine)
     return true
   })
 
   md.renderer.rules.sidenote_open = (tokens, idx) =>
-    `<details class="article-note"><summary>${md.utils.escapeHtml(tokens[idx].info)}</summary>\n`
-  md.renderer.rules.sidenote_close = () => '</details>\n'
+    `<details${md.renderer.renderAttrs(tokens[idx])}><summary>${md.utils.escapeHtml(tokens[idx].info)}</summary>\n`
+  md.renderer.rules.sidenote_close = (tokens, idx) =>
+    `</details>\n<div${md.renderer.renderAttrs(tokens[idx])}>&#8203;</div>\n`
 }
 
 function activate() {
@@ -50,9 +55,30 @@ function activate() {
       const parse = md.parse.bind(md)
       md.parse = (src, env) => {
         if (env?.articlePreview) return parse(src, env)
+        const prepared = preparePreviewMarkdown(src, true)
         const next = env ? Object.create(env) : {}
         next.articlePreview = true
-        return parse(preparePreviewMarkdown(src), next)
+        const tokens = parse(prepared.content, next)
+
+        for (const token of tokens) {
+          if (!token.map) continue
+
+          const [start, end] = token.map
+          const sourceLine = prepared.sourceLineMap[start] ?? start
+          const sourceEnd = end > start
+            ? (prepared.sourceLineMap[end - 1] ?? sourceLine) + 1
+            : sourceLine + 1
+
+          token.map = [sourceLine, sourceEnd]
+          token.attrSet('data-line', String(sourceLine))
+
+          if (token.type === 'heading_open') {
+            const headingId = prepared.headingIds[sourceLine]
+            if (headingId) token.attrSet('id', headingId)
+          }
+        }
+
+        return tokens
       }
       return md
     },

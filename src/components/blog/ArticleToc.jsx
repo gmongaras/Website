@@ -14,7 +14,7 @@ const isPlainClick = (event) =>
 
 const TocLink = ({ heading, postSlug, isActive, onSelect, className = '' }) => (
   <a
-    href={`#blog/${postSlug}/${heading.slug}`}
+    href={`/blog/${postSlug}/#${heading.slug}`}
     data-toc={heading.slug}
     className={`toc-link ${isActive ? 'active' : ''} ${className}`}
     aria-current={isActive ? 'location' : undefined}
@@ -134,7 +134,7 @@ const ArticleToc = ({ title, headings, postSlug, onNavigateSection, initialSecti
 
         <nav ref={navRef} className="scrollbar-hide min-h-0 space-y-3 overflow-y-auto overscroll-contain text-sm text-white/75">
           <a
-            href={`#blog/${postSlug}`}
+            href={`/blog/${postSlug}/`}
             data-toc=""
             className={`toc-link block text-left ${activeSlug ? '' : 'active'}`}
             aria-current={activeSlug ? undefined : 'location'}

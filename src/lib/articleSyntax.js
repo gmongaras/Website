@@ -213,7 +213,7 @@ const collectCites = (tokens, ctx) => {
   }
 }
 
-const articleHref = (slug, id) => (slug ? `#blog/${slug}/${id}` : `#${id}`)
+const articleHref = (slug, id) => (slug ? `/blog/${slug}/#${id}` : `#${id}`)
 
 const escapeLinkText = (text) => text
   .replace(/\\/g, '\\\\')

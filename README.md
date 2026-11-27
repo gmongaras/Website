@@ -58,7 +58,10 @@ scripts/                  Content generators (see below)
 | `#research` | Papers. `#publications` opens the same page. |
 | `#projects` | Projects |
 | `#reading` | Books and papers currently being read |
-| `#blog/<slug>` | An article. `#blog/<slug>/<heading-id>` opens one section of it. |
+| `/blog/<slug>/` | An article. Append `#<heading-id>` to open a section. Legacy `#blog/<slug>` links still work. |
+
+Production builds pre-render each article to `dist/blog/<slug>/index.html`, so
+the canonical article URL serves its content and metadata in the initial HTML.
 
 Resume links to `/Resume.pdf` and opens in a new tab. It is not a route.
 

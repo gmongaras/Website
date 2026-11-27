@@ -153,7 +153,7 @@ const COMPONENTS = {
     return (
       <a
         href={href}
-        className={typeof href === 'string' && href.startsWith('#blog/') ? 'article-ref' : undefined}
+        className={typeof href === 'string' && (href.startsWith('/blog/') || href.startsWith('#blog/')) ? 'article-ref' : undefined}
         target={internal ? undefined : '_blank'}
         rel={internal ? undefined : 'noreferrer'}
       >

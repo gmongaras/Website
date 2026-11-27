@@ -66,7 +66,7 @@ const readFence = (lines, start, marker) => {
   return { body, next: index < lines.length ? index + 1 : index }
 }
 
-const tokenize = (content, ctx) => {
+const tokenize = (content, ctx, lineOffset = 0) => {
   const lines = content.split('\n')
   const tokens = []
   let index = 0
@@ -78,8 +78,16 @@ const tokenize = (content, ctx) => {
       const marker = fence[1]
       const info = fence[2].trim().split(/\s+/)[0] || ''
       const { body, next } = readFence(lines, index + 1, marker)
-      if (info === 'bib') ctx.bib.push(...parseBib(body.join('\n')))
-      else tokens.push({ type: 'raw', value: lines.slice(index, next).join('\n') })
+      if (info === 'bib') {
+        if (ctx.bibSourceLine == null) ctx.bibSourceLine = lineOffset + index
+        ctx.bib.push(...parseBib(body.join('\n')))
+      } else {
+        tokens.push({
+          type: 'raw',
+          value: lines.slice(index, next).join('\n'),
+          sourceLine: lineOffset + index,
+        })
+      }
       index = next
       continue
     }
@@ -87,6 +95,7 @@ const tokenize = (content, ctx) => {
     const note = line.match(/^:::(sidenote|note)(?:[ \t]+(.*))?$/)
     if (note) {
       const title = (note[2] || '').trim()
+      const noteLine = lineOffset + index
       const body = []
       index += 1
       let nested = null
@@ -98,11 +107,14 @@ const tokenize = (content, ctx) => {
         body.push(lines[index])
         index += 1
       }
+      const closeLine = index < lines.length ? lineOffset + index : lineOffset + lines.length - 1
       if (index < lines.length && lines[index].trim() === ':::') index += 1
       tokens.push({
         type: 'note',
         title,
-        tokens: body.length ? tokenize(body.join('\n'), ctx) : [],
+        sourceLine: noteLine,
+        closeLine,
+        tokens: body.length ? tokenize(body.join('\n'), ctx, noteLine + 1) : [],
       })
       continue
     }
@@ -118,27 +130,38 @@ const tokenize = (content, ctx) => {
       const closed = index < lines.length
       if (closed) index += 1
       const raw = lines.slice(start, closed ? index : lines.length).join('\n')
-      tokens.push(closed ? mathToken(raw, body.join('\n')) : { type: 'raw', value: raw })
+      const token = closed ? mathToken(raw, body.join('\n')) : { type: 'raw', value: raw }
+      token.sourceLine = lineOffset + start
+      tokens.push(token)
       continue
     }
 
     const single = line.match(/^\$\$([\s\S]+)\$\$$/)
     if (single) {
-      tokens.push(mathToken(line, single[1]))
+      const token = mathToken(line, single[1])
+      token.sourceLine = lineOffset + index
+      tokens.push(token)
       index += 1
       continue
     }
 
-    const heading = line.match(/^(#{1,6})[ \t]+(.*)$/)
-    if (heading) {
-      const label = splitHeadingLabel(heading[2])
-      if (!ctx.headings.has(label.slug)) ctx.headings.set(label.slug, label.text || label.slug)
-    }
-    tokens.push({ type: 'line', value: line })
+    const sourceLine = lineOffset + index
+    const headingId = recordHeading(line, ctx, sourceLine)
+    tokens.push({ type: 'line', value: line, sourceLine, headingId })
     index += 1
   }
 
   return tokens
+}
+
+const recordHeading = (line, ctx, sourceLine) => {
+  const match = line.match(/^(#{1,6})[ \t]+(.*)$/)
+  if (!match) return null
+  const label = splitHeadingLabel(match[2])
+  if (!ctx.headings.has(label.slug)) ctx.headings.set(label.slug, label.text || label.slug)
+  const id = uniqueId(ctx.usedIds, label.slug)
+  ctx.headingIds.set(sourceLine, id)
+  return id
 }
 
 const mathToken = (raw, latex) => {
@@ -202,24 +225,47 @@ const replaceCommands = (text, ctx) => text.replace(commandPattern(), (match, co
   return `[${escapeLinkText(heading || label)}](#${label})`
 })
 
-const emit = (tokens, ctx) => tokens.map((token) => {
-  if (token.type === 'raw') return token.value
-  if (token.type === 'equation') {
-    const latex = token.latex ? `${token.latex} \\tag{${token.n}}` : `\\tag{${token.n}}`
-    return `<a id="${token.id}"></a>\n\n$$\n${latex}\n$$`
-  }
-  if (token.type === 'note') {
-    const title = token.title || 'Side note'
-    const body = emit(token.tokens, ctx)
-    return `:::note ${title}\n${body}\n:::`
-  }
+const emit = (tokens, ctx) => {
+  const parts = tokens.map((token) => {
+    if (token.type === 'raw') {
+      const lines = token.value.split('\n')
+      return {
+        content: token.value,
+        lineMap: lines.map((_, index) => token.sourceLine + index),
+      }
+    }
 
-  const heading = token.value.match(/^(#{1,6})([ \t]+)(.*)$/)
-  if (!heading) return replaceCommands(token.value, ctx)
-  const label = splitHeadingLabel(heading[3])
-  const id = label.explicit ? label.slug : createHeadingId(label.text)
-  return `<a id="${escapeHtml(id)}"></a>\n\n${heading[1]}${heading[2]}${replaceCommands(label.text, ctx)}`
-}).join('\n')
+    if (token.type === 'equation') {
+      const latex = token.latex ? `${token.latex} \\tag{${token.n}}` : `\\tag{${token.n}}`
+      const content = `<a id="${token.id}"></a>\n\n$$\n${latex}\n$$`
+      return { content, lineMap: content.split('\n').map(() => token.sourceLine) }
+    }
+
+    if (token.type === 'note') {
+      const title = token.title || 'Side note'
+      const body = emit(token.tokens, ctx)
+      const content = `:::note ${title}\n${body.content}\n:::`
+      const bodyMap = body.lineMap.length ? body.lineMap : [token.sourceLine + 1]
+      return {
+        content,
+        lineMap: [token.sourceLine, ...bodyMap, token.closeLine],
+      }
+    }
+
+    const heading = token.value.match(/^(#{1,6})([ \t]+)(.*)$/)
+    const label = heading ? splitHeadingLabel(heading[3]) : null
+    const content = heading
+      ? `${heading[1]}${heading[2]}${replaceCommands(label.text, ctx)}`
+      : replaceCommands(token.value, ctx)
+
+    return { content, lineMap: content.split('\n').map(() => token.sourceLine) }
+  })
+
+  return {
+    content: parts.map((part) => part.content).join('\n'),
+    lineMap: parts.flatMap((part) => part.lineMap),
+  }
+}
 
 const linkify = (text) => {
   const escaped = escapeHtml(text)
@@ -259,24 +305,48 @@ const bibliography = (ctx) => {
   return `\n\n<h2 id="${slug}">References</h2>\n<ol>\n${items}\n</ol>\n`
 }
 
-const preparePreviewMarkdown = (content) => {
+const preparePreviewMarkdown = (content, withSourceMap = false) => {
   const normalized = content.replace(/\r\n/g, '\n')
-  if (!needsPreview(normalized)) return content
+  if (!needsPreview(normalized)) {
+    if (!withSourceMap) return content
+    return {
+      content,
+      sourceLineMap: normalized.split('\n').map((_, index) => index),
+      headingIds: {},
+    }
+  }
 
   const ctx = {
     equations: new Map(),
     equationCount: 0,
     bib: [],
+    bibSourceLine: null,
     headings: new Map(),
+    headingIds: new Map(),
     cites: new Map(),
     citeIds: new Map(),
     usedIds: new Set(),
   }
   const tokens = tokenize(normalized, ctx)
-  for (const id of ctx.headings.keys()) ctx.usedIds.add(id)
   assignEquations(tokens, ctx)
   collectCites(tokens, ctx)
-  return `${emit(tokens, ctx).replace(/\n*$/, '')}${bibliography(ctx)}`
+
+  const emitted = emit(tokens, ctx)
+  const body = emitted.content.replace(/\n*$/, '')
+  const lineMap = emitted.lineMap.slice(0, body.split('\n').length)
+  const references = bibliography(ctx)
+  const prepared = `${body}${references}`
+  const outputLineCount = prepared.split('\n').length
+  const fallbackLine = ctx.bibSourceLine ?? normalized.split('\n').length - 1
+  while (lineMap.length < outputLineCount) lineMap.push(fallbackLine)
+  lineMap.length = outputLineCount
+
+  const result = {
+    content: prepared,
+    sourceLineMap: lineMap,
+    headingIds: Object.fromEntries(ctx.headingIds),
+  }
+  return withSourceMap ? result : result.content
 }
 
 module.exports = { preparePreviewMarkdown }

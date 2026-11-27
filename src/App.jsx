@@ -23,11 +23,15 @@ const ANCHOR_SCROLL_DELAY_MS = 100
 const readRoute = () => {
   const hash = window.location.hash
   const parsed = parseBlogHash(hash)
-  if (parsed?.slug) {
+  const pathSlug = window.location.pathname.match(/^\/blog\/([^/]+)\/?$/)?.[1]
+  const slug = pathSlug ? decodeURIComponent(pathSlug) : parsed?.slug
+  if (slug) {
     return {
       page: 'blog',
-      post: posts.find((post) => post.slug === parsed.slug) ?? null,
-      section: parsed.section,
+      post: posts.find((post) => post.slug === slug) ?? null,
+      section: pathSlug
+        ? (hash.startsWith('#blog/') ? parsed?.section : hash.slice(1) || null)
+        : parsed.section,
     }
   }
 
@@ -137,8 +141,9 @@ const BlogRoute = ({ metadata, initialSection }) => {
 }
 
 /**
- * "#blog/<slug>" opens an article. "#blogs", "#research", and "#projects"
- * are separate pages. Resume links straight to the PDF. No hash is home.
+ * "/blog/<slug>/" is the crawlable article route. Legacy "#blog/<slug>"
+ * links still work. "#blogs", "#research", and "#projects" are page routes.
+ * Resume links straight to the PDF. No hash is home.
  */
 export default function App() {
   const [route, setRoute] = useState(readRoute)

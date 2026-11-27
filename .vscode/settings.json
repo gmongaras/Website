@@ -4,5 +4,6 @@
   // rendered by the Article Markdown Preview extension in .vscode/article-markdown.
   "markdown.math.macros": {
     "\\bigo": "\\mathcal{O}"
-  }
+  },
+  "markdown.preview.doubleClickToSwitchToEditor": true
 }

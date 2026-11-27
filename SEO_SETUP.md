@@ -51,6 +51,12 @@ To verify again from scratch (new property, or a lost claim):
 npm run generate-sitemap
 ```
 
+Article pages are emitted as static HTML at `/blog/<slug>/` after the Vite
+production build. The sitemap lists those canonical paths. After deploying,
+submit `https://gmongaras.me/sitemap.xml` in Search Console and use URL
+Inspection to request indexing for important articles. Indexing and ranking are
+decided by Google and are not guaranteed.
+
 ### 3. Test Your SEO
 - Use [Google's Rich Results Test](https://search.google.com/test/rich-results) to validate structured data
 - Use [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) to test Open Graph tags
