@@ -1,6 +1,15 @@
 // Projects data
 export const projects = [
   {
+    name: "Torch_Trainer",
+    date: "January 2026 - November 2026",
+    desc: "From scratch torch trainer I created for my PhD. It uses a varlen setup so it can train efficiently and has DP parallelization, evals, as well as a way to easily add metrics.",
+    skills: ["Transformers", "Pretraining",],
+    links: [
+      { label: "Code", href: "https://github.com/gmongaras/Torch_Trainer" }
+    ]
+  },
+  {
     name: "2Mamba2Furious",
     date: "May 2025 - March 2026",
     desc: "Code for my paper \"2Mamba2Furious: Linear in complexity, competitive in accuracy\"",
