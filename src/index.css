@@ -214,7 +214,7 @@ html {
 
 .equation {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
   margin: 1.75rem 0;
 }
@@ -226,13 +226,59 @@ html {
   text-align: center;
 }
 
-.equation-body .katex-display {
+.equation-body-fitted {
+  overflow: hidden;
+}
+
+.equation-content {
+  width: max-content;
+  min-width: 100%;
+  margin: 0 auto;
+}
+
+.equation-content-inner {
+  width: max-content;
+  min-width: 100%;
+}
+
+.equation-content-inner .katex-display {
   margin: 0;
+  width: max-content;
+  max-width: none;
+  overflow: visible;
+}
+
+.equation-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex: none;
 }
 
 .equation-number {
   flex: none;
   font-variant-numeric: tabular-nums;
+}
+
+.equation-fit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.375rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.equation-fit-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.equation-fit-button svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .article-note {
@@ -276,6 +322,10 @@ html {
   padding: 0 1rem 0.25rem 2.5rem;
 }
 
+.article-note-title {
+  min-width: 0;
+}
+
 .article-references {
   margin: 0 0 1.5rem;
   padding-left: 1.5rem;
@@ -291,6 +341,53 @@ html {
   margin-bottom: 0;
 }
 
+.code-block {
+  --code-accent: 148, 163, 184;
+  border-left: 3px solid rgb(var(--code-accent));
+}
+
+.code-block-header {
+  background: linear-gradient(90deg, rgba(var(--code-accent), 0.16), rgba(31, 41, 55, 0.96));
+  border-bottom-color: rgba(var(--code-accent), 0.22);
+}
+
+.code-block-language {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.code-block-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: rgb(var(--code-accent));
+  box-shadow: 0 0 10px rgba(var(--code-accent), 0.55);
+}
+
+.code-block-python,
+.code-block-py { --code-accent: 59, 130, 246; }
+.code-block-javascript,
+.code-block-js { --code-accent: 250, 204, 21; }
+.code-block-typescript,
+.code-block-ts { --code-accent: 56, 189, 248; }
+.code-block-bash,
+.code-block-sh,
+.code-block-shell { --code-accent: 34, 197, 94; }
+.code-block-rust { --code-accent: 249, 115, 22; }
+.code-block-cpp,
+.code-block-cuda,
+.code-block-c { --code-accent: 168, 85, 247; }
+.code-block-json,
+.code-block-yaml,
+.code-block-yml { --code-accent: 244, 114, 182; }
+.code-block-html { --code-accent: 251, 146, 60; }
+.code-block-css { --code-accent: 96, 165, 250; }
+.code-block-sql { --code-accent: 45, 212, 191; }
+
 .katex {
   font-size: 1rem;
 }
@@ -299,6 +396,11 @@ html {
   min-width: 0;
   max-width: 100%;
   overflow-wrap: break-word;
+}
+
+.blog-markdown img[src*=".svg" i],
+.article-markdown-compact img[src*=".svg" i] {
+  background-color: white;
 }
 
 .blog-markdown a,

@@ -1,5 +1,33 @@
 export const posts = [
   {
+    slug: 'moe',
+    title: 'On The Importance of MoE Router Tie Breaking',
+    date: '2026-08-24',
+    tags: ['Mixture of Experts', 'MoE', 'Machine Learning'],
+    excerpt: 'What can go wrong when you use torch.topk for your MoE model',
+  },
+  {
+    slug: 'linear_attn',
+    title: 'Linear Attention',
+    date: '2026-08-24',
+    tags: ['Linear Attention', 'Attention', 'Transformers'],
+    excerpt: 'Just talking about liner attention.',
+  },
+  {
+    slug: 'deriving-from-scratch',
+    title: 'Deriving From Scratch',
+    date: '2026-08-24',
+    tags: ['Machine Learning'],
+    excerpt: 'Derive papers from scratch.',
+  },
+  {
+    slug: 'deriving-mamba3',
+    title: 'Deriving Mamba 3',
+    date: '2026-08-24',
+    tags: ['Mamba', 'Machine Learning'],
+    excerpt: 'I having been working with MoEs a lot with personal projects.',
+  },
+  {
     slug: 'diffusion-models',
     title: 'Diffusion Models - DDPMs, DDIMs, and Classifier Free Guidance',
     date: '2023-03-13',
@@ -30,6 +58,10 @@ export const posts = [
 ]
 
 const postLoaders = {
+  moe: () => import('./on_the_importance_of_moe_router_tie_breaking.js'),
+  linear_attn: () => import('./linear_attention.js'),
+  'deriving-from-scratch': () => import('./Deriving_From_Scratch.js'),
+  'deriving-mamba3': () => import('./deriving_mamba3_....js'),
   'diffusion-models': () => import('./diffusion_models.js'),
   'attn-masks': () => import('./attn_masks.js'),
   'ai-girlfriend': () => import('./ai_girlfriend.js'),

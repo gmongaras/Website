@@ -12,6 +12,34 @@ const ClipboardIcon = () => (
   </svg>
 )
 
+const LANGUAGE_LABELS = {
+  bash: 'Bash',
+  sh: 'Shell',
+  shell: 'Shell',
+  javascript: 'JavaScript',
+  js: 'JavaScript',
+  typescript: 'TypeScript',
+  ts: 'TypeScript',
+  python: 'Python',
+  py: 'Python',
+  cpp: 'C++',
+  c: 'C',
+  cuda: 'CUDA',
+  rust: 'Rust',
+  json: 'JSON',
+  yaml: 'YAML',
+  yml: 'YAML',
+  html: 'HTML',
+  css: 'CSS',
+  sql: 'SQL',
+  text: 'Text',
+}
+
+const normalizeLanguage = (language) => {
+  const normalized = String(language || 'text').trim().toLowerCase().replace(/[^a-z0-9+#-]/g, '')
+  return normalized || 'text'
+}
+
 const CodeBlock = ({ code, language = 'text' }) => {
   const [copied, setCopied] = useState(false)
   const resetTimer = useRef(null)
@@ -20,7 +48,20 @@ const CodeBlock = ({ code, language = 'text' }) => {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(code)
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = code
+        textarea.setAttribute('readonly', '')
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        const succeeded = document.execCommand('copy')
+        textarea.remove()
+        if (!succeeded) throw new Error('Copy failed')
+      }
     } catch {
       return
     }
@@ -33,22 +74,28 @@ const CodeBlock = ({ code, language = 'text' }) => {
   // Legacy {{code}} blocks stored backslashes doubled up, so they are collapsed
   // again for display.
   const displayCode = code.replace(/\\\\/g, '\\')
+  const normalizedLanguage = normalizeLanguage(language)
+  const languageLabel = LANGUAGE_LABELS[normalizedLanguage]
+    || normalizedLanguage.replace(/[-+]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 
   return (
     <div className="pdf-block my-6 min-w-0 max-w-full">
-      <div className="pdf-block-surface bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group min-w-0">
-        <div className="pdf-block-header flex items-center justify-between bg-gray-800 px-4 py-2 text-sm text-gray-300 border-b border-gray-700">
-          <span className="font-mono">{language}</span>
+      <div className={`pdf-block-surface code-block code-block-${normalizedLanguage} bg-gray-900 rounded-lg overflow-hidden border border-gray-700 relative group min-w-0`}>
+        <div className="pdf-block-header code-block-header flex items-center justify-between px-4 py-2 text-sm text-gray-300 border-b border-gray-700">
+          <span className="code-block-language"><span className="code-block-dot" />{languageLabel}</span>
           <button
+            type="button"
             onClick={copy}
-            className="no-print opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700"
+            className="no-print flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700"
             title="Copy code"
+            aria-label={copied ? 'Code copied' : 'Copy code'}
+            aria-live="polite"
           >
             {copied ? <><CheckIcon /> Copied!</> : <><ClipboardIcon /> Copy</>}
           </button>
         </div>
         <pre className="p-4 overflow-x-auto">
-          <code className={`language-${language} text-sm text-gray-100 whitespace-pre`}>
+          <code className={`language-${normalizedLanguage} text-sm text-gray-100 whitespace-pre`}>
             {displayCode}
           </code>
         </pre>

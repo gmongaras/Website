@@ -158,13 +158,31 @@ Standard Markdown, plus:
 - **Side notes** — collapsed until opened:
 
   ```markdown
-  :::note Where this comes from
+  :::note Where this comes from $\alpha + \beta$
   Optional paragraphs, math, and citations.
   :::
   ```
 
-- **Figures** — `![alt](/blogs/images/foo/1.webp "caption")`. The caption
-  supports links, `*emphasis*`, `` `code` `` and maths.
+- **Figures** — captions use the standard image title. Add `{#fig:name}` after
+  the image to number and label it; `\ref{fig:name}` links to the figure.
+
+  ```markdown
+  ![Diagram](/blogs/images/foo/1.svg "A labeled figure"){#fig:diagram}
+  ```
+
+  Captions support links, `*emphasis*`, `` `code` `` and maths. SVG images get
+  a white background in both renderers.
+- **Code blocks** — use a `code` environment and specify the language in square
+  brackets. Both `\begin` and the misspelled `\being` opener are accepted.
+  Braces such as `{python}` are also supported for compatibility.
+
+  ```markdown
+  \begin{code}[python]
+  print('hello')
+  \end{code}
+  ```
+
+  Omit `[python]` for plain text.
 - **YouTube** — a fenced block with the `youtube` language and a URL or bare
   video id as its only line.
 - Legacy `{{code(lang)}}…{{code}}` and `{{youtube(url)}}` blocks from older

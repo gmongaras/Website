@@ -43,9 +43,32 @@ const sidenote = (md) => {
   })
 
   md.renderer.rules.sidenote_open = (tokens, idx) =>
-    `<details${md.renderer.renderAttrs(tokens[idx])}><summary>${md.utils.escapeHtml(tokens[idx].info)}</summary>\n`
+    `<details${md.renderer.renderAttrs(tokens[idx])}><summary>${md.renderInline(tokens[idx].info)}</summary>\n`
   md.renderer.rules.sidenote_close = (tokens, idx) =>
     `</details>\n<div${md.renderer.renderAttrs(tokens[idx])}>&#8203;</div>\n`
+
+  const renderFence = md.renderer.rules.fence
+  md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+    const token = tokens[idx]
+    if (token.info.trim() !== 'article-figure') {
+      return renderFence
+        ? renderFence(tokens, idx, options, env, self)
+        : self.renderToken(tokens, idx, options)
+    }
+
+    try {
+      const figure = JSON.parse(token.content)
+      const escape = md.utils.escapeHtml
+      const caption = figure.caption ? ` ${md.renderInline(figure.caption)}` : ''
+      return `<figure id="${escape(figure.id)}" class="article-figure">`
+        + `<img src="${escape(figure.src)}" alt="${escape(figure.alt)}">`
+        + `<figcaption>Figure ${figure.n}.${caption}</figcaption></figure>\n`
+    } catch {
+      return renderFence
+        ? renderFence(tokens, idx, options, env, self)
+        : self.renderToken(tokens, idx, options)
+    }
+  }
 }
 
 function activate() {

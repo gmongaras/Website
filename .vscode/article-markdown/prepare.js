@@ -42,7 +42,7 @@ const escapeLinkText = (text) => text
   .replace(/\n/g, ' ')
 
 const needsPreview = (content) =>
-  /\\(eqref|cite|ref)\{|^:::(?:sidenote|note)(?:[ \t]|$)|^```bib\b|\\label\{/m.test(content)
+  /\\(eqref|cite|ref)\{|^:::(?:sidenote|note)(?:[ \t]|$)|^```bib\b|\\label\{|^\\(?:begin|being)\{code\}|^!\[[^\]]*\]\([^)\n]+\)\s*\{#/m.test(content)
 
 const parseBib = (source) => {
   const entries = []
@@ -64,6 +64,35 @@ const readFence = (lines, start, marker) => {
     index += 1
   }
   return { body, next: index < lines.length ? index + 1 : index }
+}
+
+const fenceWrap = (language, body) => {
+  let marker = '```'
+  const payload = body.endsWith('\n') ? body : `${body}\n`
+  while (payload.includes(marker)) marker += '`'
+  return `${marker}${language}\n${payload}${marker}`
+}
+
+const codeEnvironment = (line) => {
+  const match = line.match(/^\\(?:begin|being)\{code\}(?:\{([^{}]*)\}|\[([^\]]*)\])?\s*$/)
+  if (!match) return null
+  return (match[1] || match[2] || 'text').trim() || 'text'
+}
+
+const labeledImage = (line) => {
+  const match = line.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*\{#([A-Za-z0-9:_-]+)\}\s*$/)
+  if (!match) return null
+  return { alt: match[1], src: match[2], caption: match[3] || '', label: match[4] }
+}
+
+const readCodeEnvironment = (lines, start, language) => {
+  const body = []
+  let index = start + 1
+  while (index < lines.length && !/^\\end\{code\}\s*$/.test(lines[index])) {
+    body.push(lines[index])
+    index += 1
+  }
+  return { language, code: body.join('\n'), next: index < lines.length ? index + 1 : index }
 }
 
 const tokenize = (content, ctx, lineOffset = 0) => {
@@ -89,6 +118,21 @@ const tokenize = (content, ctx, lineOffset = 0) => {
         })
       }
       index = next
+      continue
+    }
+
+    const language = codeEnvironment(line.trim())
+    if (language) {
+      const code = readCodeEnvironment(lines, index, language)
+      tokens.push({ type: 'code', language: code.language, code: code.code, sourceLine: lineOffset + index })
+      index = code.next
+      continue
+    }
+
+    const image = labeledImage(line.trim())
+    if (image) {
+      tokens.push({ type: 'figure', ...image, sourceLine: lineOffset + index })
+      index += 1
       continue
     }
 
@@ -186,6 +230,19 @@ const assignEquations = (tokens, ctx) => {
   }
 }
 
+const assignFigures = (tokens, ctx) => {
+  for (const token of tokens) {
+    if (token.type === 'figure') {
+      ctx.figureCount += 1
+      token.n = ctx.figureCount
+      token.id = uniqueId(ctx.usedIds, `figure-${htmlId(token.label)}`)
+      if (!ctx.figures.has(token.label)) ctx.figures.set(token.label, token)
+    } else if (token.type === 'note') {
+      assignFigures(token.tokens, ctx)
+    }
+  }
+}
+
 const commandPattern = () => /`[^`]*`|\$\$[\s\S]*?\$\$|\$[^$\n]*\$|\\(eqref|cite|ref)\{([^}]+)\}/g
 
 const collectCites = (tokens, ctx) => {
@@ -220,6 +277,8 @@ const replaceCommands = (text, ctx) => text.replace(commandPattern(), (match, co
   const label = arg.trim()
   const equation = ctx.equations.get(label)
   if (equation) return `[[${equation.n}]](#${equation.id})`
+  const figure = ctx.figures.get(label)
+  if (figure) return `[Figure ${figure.n}](#${figure.id})`
   if (command === 'eqref') return `[[?]](#equation-${htmlId(label)})`
   const heading = ctx.headings.get(label)
   return `[${escapeLinkText(heading || label)}](#${label})`
@@ -233,6 +292,22 @@ const emit = (tokens, ctx) => {
         content: token.value,
         lineMap: lines.map((_, index) => token.sourceLine + index),
       }
+    }
+
+    if (token.type === 'code') {
+      const content = fenceWrap(token.language, token.code)
+      return { content, lineMap: content.split('\n').map(() => token.sourceLine) }
+    }
+
+    if (token.type === 'figure') {
+      const content = fenceWrap('article-figure', JSON.stringify({
+        id: token.id,
+        n: token.n,
+        alt: token.alt,
+        src: token.src,
+        caption: token.caption,
+      }))
+      return { content, lineMap: content.split('\n').map(() => token.sourceLine) }
     }
 
     if (token.type === 'equation') {
@@ -319,6 +394,8 @@ const preparePreviewMarkdown = (content, withSourceMap = false) => {
   const ctx = {
     equations: new Map(),
     equationCount: 0,
+    figures: new Map(),
+    figureCount: 0,
     bib: [],
     bibSourceLine: null,
     headings: new Map(),
@@ -329,6 +406,7 @@ const preparePreviewMarkdown = (content, withSourceMap = false) => {
   }
   const tokens = tokenize(normalized, ctx)
   assignEquations(tokens, ctx)
+  assignFigures(tokens, ctx)
   collectCites(tokens, ctx)
 
   const emitted = emit(tokens, ctx)
